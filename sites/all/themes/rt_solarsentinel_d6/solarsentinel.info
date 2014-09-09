@@ -1,0 +1,56 @@
+name = SolarSentinel
+project = rt_solarsentinel_d6
+project status url = http://updates.rockettheme.com/drupal/release-history
+description = Rockettheme SolarSentinel Theme for Drupal
+version = 6.x-1.6
+core = 6.x
+engine = phptemplate
+stylesheets[all][] = /css/style.css
+stylesheets[print][] = /css/print.css
+
+features[] = slogan
+features[] = favicon
+
+
+regions[syndicate] = Syndicate
+
+regions[topleft] = Top Left
+regions[topright] = Top Right
+regions[search] = Search
+
+regions[custom1_1] = Custom 1-1
+regions[custom1_2] = Custom 1-2
+regions[custom2_1] = Custom 2-1
+regions[custom2_2] = Custom 2-2
+regions[custom2_3] = Custom 2-3
+regions[showcase123] = Showcase 123
+
+regions[left] = Left 
+regions[feature] = Feature
+regions[newsflash] = NewsFlash
+regions[user123] = User 123
+
+regions[latest_news] = Latest News
+regions[inset] = Inset
+regions[inset2] = Inset 2
+regions[micronews] = MicroNews
+regions[user456] = User 456
+regions[right] = Right 
+
+regions[user789] = User 789
+regions[bottommenu] = Bottom Menu
+regions[bottom123] = Bottom 123
+regions[footer] = Footer
+regions[debug] = Debug
+
+
+stylesheets[all][] = css/typography.css
+stylesheets[all][] = css/headers.css
+stylesheets[all][] = css/drupal.css
+stylesheets[all][] = css/template_css.css
+stylesheets[all][] = css/general.css
+stylesheets[all][] = custom/css/custom.css
+
+
+
+

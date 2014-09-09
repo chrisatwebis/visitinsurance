@@ -1,0 +1,11 @@
+name = "stb user profile"
+description = "Create unique user profile crossing multi-sites"
+core = 6.x
+package = "stb"
+
+; Information added by drupal.org packaging script on 2011-08-22
+version = "6.x-1.0"
+core = "6.x"
+project = "stb_user_profile"
+datestamp = "1314035821"
+

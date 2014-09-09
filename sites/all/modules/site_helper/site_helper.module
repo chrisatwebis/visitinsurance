@@ -1,0 +1,1756 @@
+<?php
+	/*
+	*	Things to do:
+		1.disable the insurance product field. - done
+		2. Modify price search and add buy online button to link to this webform. - done
+		3. Add "the insured" support which links to current logged in user. Once the "the insured" is selected, it will auto complete the fields.
+		4. when people click next, it save the result.
+	*/
+	/*
+	 * Implemetation of hook_init
+	 * */
+	function site_helper_init()
+	{
+		
+		drupal_add_css(drupal_get_path('module', 'site_helper') .'/site_helper.css');
+		
+ 	}
+	
+	/**
+	 * Implementation of hook_menu().
+	 */
+	function site_helper_menu() {
+	  
+		$items['site_helper/webform/coverage_and_deductible/js'] = array(
+			'title' => 'Javascript Choice Form',
+			'page callback' => 'site_helper_webform_coverage_and_deductible_js',
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);
+
+		$items['site_helper/webform/the_insured/%/js'] = array(
+			'title' => 'Get the insured by uid for insured 1',
+			'page callback' => 'site_helper_webform_the_insured_js',
+			'page arguments' => array(3),
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);
+		/*
+		$items['site_helper/webform/the_insured_dob/%/js'] = array(
+			'title' => 'Get the insured by uid for insured 1',
+			'page callback' => 'site_helper_webform_the_insured_dob_js',
+			'page arguments' => array(3),
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);*/
+		
+		$items['site_helper/webform/use_your_profile_address/js'] = array(
+			'title' => 'Use your profile address as canadian address',
+			'page callback' => 'site_helper_webform_use_your_profile_address_js',
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);
+		$items['site_helper/webform/use_your_profile_info/js'] = array(
+			'title' => 'Use your profile info as contact info',
+			'page callback' => 'site_helper_webform_use_your_profile_info_js',
+			'access arguments' => array('access content'),
+			'type' => MENU_CALLBACK,
+		);
+		
+		return $items;
+	}
+	
+	/**
+	* Implementation of hook_webform_select_options_info().
+	* See webform/webform_hooks.php for further information on this hook in the Webform API.
+	*/
+	function site_helper_webform_select_options_info() {
+	  $items = array();
+	  $items['available_province'] = array(
+		'title' => t('Canada available Province'),
+		'options callback' => 'site_helper_options_available_province'
+	  );
+	  $items['gender'] = array(
+		'title' => t('Gender'),
+		'options callback' => 'site_helper_options_gender'
+	  );
+	  $items['available_visitor_to_canada_insurance'] = array(
+		'title' => t('Visitor to Canada Insurance'),
+		'options callback' => 'site_helper_options_available_visitor_to_canada_insurance'
+	  );
+	  $items['available_insurance_coverage'] = array(
+		'title' => t('Visitor to Canada Insurance Coverage'),
+		'options callback' => 'site_helper_options_available_visitor_to_canada_insurance_coverage'
+	  );
+	  $items['available_insurance_deductible'] = array(
+		'title' => t('Visitor to Canada Insurance Deductible'),
+		'options callback' => 'site_helper_options_available_visitor_to_canada_insurance_deductible'
+	  );
+	 /* $items['available_the_insured_by_uid'] = array(
+		'title' => t('Visitor to Canada Insurance Deductible'),
+		'options callback' => 'site_helper_options_available_the_insured_by_uid'
+	  );
+	  */
+	  return $items;
+	}
+
+	/**
+	* Build an options list for use by webforms.
+	*/
+	function site_helper_options_available_province() {		
+		return array(
+			'AB' => 'Alberta',
+			'BC' => 'British Columbia',
+			'MB' => 'Manitoba',
+			'NB' => 'New Brunswick',
+			'NL' => 'Newfoundland and Labrador',
+			'NS' => 'Nova Scotia',
+			'ON' => 'Ontario',
+			'PE' => 'Prince Edward Island',
+			'QC' => 'Quebec',
+			'SK' => 'Saskatchewan',
+			'NT' => 'Northwest Territories',
+			'NU' => 'Nunavut',
+			'YT' => 'Yukon Territory',
+		);
+	}
+	
+	/**
+	* Build an options list for use by webforms.
+	*/
+	function site_helper_options_gender() {		
+		return array(
+			'male' => 'Male',
+			'female' => 'Female',
+		);
+	}
+	
+	/**
+	* Build an options list for use by webforms.
+	*/
+	function site_helper_options_available_visitor_to_canada_insurance() {		
+			$results = db_query("SELECT nid, title FROM {node} WHERE type = '%s'", "neighbourhood");
+
+		$sql = "	
+			SELECT node.nid,node.title
+			FROM {node} as node
+			LEFT JOIN {term_node} as term_node ON node.vid = term_node.vid
+			LEFT JOIN {term_data} as term_data ON term_node.tid = term_data.tid
+			WHERE (term_data.vid in ('7')) AND (term_node.tid = 11) AND (node.status = 1)
+			ORDER BY node.sticky DESC, node.created DESC
+		";
+		$results = db_query($sql);
+		while ($node = db_fetch_object($results)) {
+			// take a looksie at what we've got
+			$options[$node->nid] = $node->title;
+		}
+		return $options;
+		
+	}
+	
+	/**
+	* Build an options list for use by webforms.
+	*/
+	function site_helper_options_available_visitor_to_canada_insurance_coverage() {		
+				
+		$options = array(
+			"10000"=>"$10000 CAD",
+			"15000"=>"$15000 CAD",
+			"20000"=>"$20000 CAD",
+			"25000"=>"$25000 CAD",
+			"30000"=>"$30000 CAD",
+			"40000"=>"$40000 CAD",
+			"50000"=>"$50000 CAD",
+			"60000"=>"$60000 CAD",
+			"80000"=>"$80000 CAD",
+			"100000"=>"$100000 CAD",
+			"150000"=>"$150000 CAD",
+			"200000"=>"$200000 CAD",
+			"250000"=>"$250000 CAD",
+			"300000"=>"$300000 CAD",
+		);
+		return $options;
+		
+	}
+	
+	/**
+	* Build an options list for use by webforms.
+	*/
+	function site_helper_options_available_visitor_to_canada_insurance_deductible() {		
+		
+		$options = array(
+			"0"=>"$0 CAD",
+			"50"=>"$50 CAD",
+      "75"=>"$75 CAD",
+			"100"=>"$100 CAD",
+			"250"=>"$250 CAD",
+			"500"=>"$500 CAD",
+			"1000"=>"$1000 CAD",
+			"3000"=>"$3000 CAD",
+			"5000"=>"$5000 CAD",
+			"10000"=>"$10000 CAD"
+		);
+		
+		return $options;
+		
+	}
+	
+	function site_helper_options_available_the_insured_by_uid($uid)
+	{
+		$sql = "SELECT 
+					node_data_field_given_name.field_given_name_value AS node_data_field_given_name_field_given_name_value,
+					node.nid AS nid,
+					node.vid AS node_vid,
+					node_data_field_surname.field_surname_value AS node_data_field_surname_field_surname_value,
+					node_data_field_relationship_to_buyer.field_relationship_to_buyer_value AS node_data_field_relationship_to_buyer_field_relationship_to_,
+					node_data_field_relationship_to_buyer.field_insured_birthday_value AS node_data_field_relationship_to_buyer_field_insured_birthday,
+					node.title AS node_title
+				FROM {node} as node 
+				LEFT JOIN {content_type_the_insured} as node_data_field_related_to_whom ON node.vid = node_data_field_related_to_whom.vid
+				INNER JOIN {users} as users_node_data_field_related_to_whom ON node_data_field_related_to_whom.field_related_to_whom_uid = users_node_data_field_related_to_whom.uid
+				LEFT JOIN {content_field_given_name} as node_data_field_given_name ON node.vid = node_data_field_given_name.vid
+				LEFT JOIN {content_field_surname} as node_data_field_surname ON node.vid = node_data_field_surname.vid
+				LEFT JOIN {content_type_the_insured} as node_data_field_relationship_to_buyer ON node.vid = node_data_field_relationship_to_buyer.vid
+				WHERE (node.type in ('the_insured')) AND (users_node_data_field_related_to_whom.uid = %d )";
+		$results = db_query($sql,$uid);
+		$options["0"] = "- ".t("None")." -";
+		while ($node = db_fetch_object($results)) {
+			// take a looksie at what we've got
+			$options[$node->nid] = $node->node_data_field_given_name_field_given_name_value." ".$node->node_data_field_surname_field_surname_value."-".$node->node_data_field_relationship_to_buyer_field_relationship_to_;
+		}
+		return $options;
+	}
+	
+	/**
+	* Build an options list for property filtering.
+	*/
+	function site_helper_form_alter(&$form, &$form_state, $form_id) 
+	{	
+		$pos = strpos($form_id,"webform_client_form");
+		if($pos !== false)
+		{
+			site_helper_translate_webform(&$form['submitted']);
+		}
+		 
+		
+		switch ($form_id) {
+			//Online price searching 
+			
+			case 'webform_client_form_84':
+				// Simply add the additional validate handler.
+				$first = array_shift($form['#submit']);
+				array_unshift($form['#submit'], $first, 'site_helper_webform_client_form_84_submit');
+				break;
+			//Online Quoting
+			case 'webform_client_form_166':
+				
+				if(isset($form_state['action']))
+				{
+					$form['#action'] = $form_state['action'];
+				}
+				
+				//Get the insurable members' auto-fill functionality done. - start
+				//Get the login user account profile auto-fill related fields functionality done - start
+				global $user;
+				if($user->uid != 0)
+				{
+					//Add the insured you have to get autocomplete for the insureds.
+					foreach (element_children($form['submitted']['insurable_members']) as $child) 
+					{
+						$pos = strpos($child,"insured_");
+						
+						//The children are existing and not null. Which means they are this page element not another page.
+						if($pos !== false && !empty($form['submitted']['insurable_members'][$child]))
+						{
+							$tem_arr = explode("_",$child);
+							$insured_delta = $tem_arr[sizeof($tem_arr) - 1];
+							$form['submitted']['insurable_members'][$child]["#prefix"] = "<div id='site_helper_the_insured_".$insured_delta."'>";
+							$form['submitted']['insurable_members'][$child]["#suffix"] = "</div>";
+							$form['submitted']['insurable_members'][$child]["the_insured_you_have"] = array(
+								'#type' => 'select', 
+								'#title' => t('Your stored Insurable Members'),
+								'#options' => site_helper_options_available_the_insured_by_uid($user->uid),
+								'#default_value' => $form_state["post"]["submitted"]["insurable_members"][$child]["the_insured_you_have"],
+							);
+							$form['submitted']['insurable_members'][$child]["the_insured_you_have"]["#ahah"] = array(
+							  'path' => 'site_helper/webform/the_insured/'.$insured_delta.'/js',
+							  'wrapper' => 'site_helper_the_insured_'.$insured_delta,
+							  'method' => 'replace',
+							  'effect' => 'fade',
+							  'event' =>'change',
+							);
+							
+							//Add age ahaha handler for each dob field
+							/*
+							$form['submitted']['insurable_members'][$child]['do_you_want_pre_existing_condition_covered']["#prefix"] = "<div id='site_helper_the_insured_dob_".$insured_delta."'>";
+							$form['submitted']['insurable_members'][$child]['do_you_want_pre_existing_condition_covered']["#suffix"] = "</div>";
+							
+							$form['submitted']['insurable_members'][$child]['birth_date']['year']["#ahah"] = array(
+							  'path' => 'site_helper/webform/the_insured_dob/'.$insured_delta.'/js',
+							  'wrapper' => 'site_helper_the_insured_dob_'.$insured_delta,
+							  'method' => 'replace',
+							  'effect' => 'fade',
+							  'event' =>'change',
+							);*/
+							
+							
+						}
+						
+					}
+					
+					$profile = content_profile_load("profile",$user->uid);
+					if(!empty($profile))
+					{
+						//The children are existing and not null. Which means they are this page element not another page.
+						if(!empty($profile->field_user_address[0]["lid"]) && !empty($form['submitted']['canadian_address']))
+						{
+							$form['submitted']['canadian_address']["#prefix"] = "<div id='site_helper_canadian_address_profile_address'>";
+							$form['submitted']['canadian_address']["#suffix"] = "</div>";
+							$form['submitted']['canadian_address']["use_your_profile_address"] = array(
+								'#type' => 'button', 
+								'#value' => t('Use your profile address'), 
+								'#weight' => -19,
+								'#prefix' => '<div class="button_wrapper use_your_profile_address">',
+								'#suffix' => '</div>',
+							);
+							$form['submitted']['canadian_address']["use_your_profile_address"]["#ahah"] = array(
+							  'path' => 'site_helper/webform/use_your_profile_address/js',
+							  'wrapper' => 'site_helper_canadian_address_profile_address',
+							  'method' => 'replace',
+							  'effect' => 'fade',
+							  'event' =>'click',
+							);
+						}
+						
+						//The children are existing and not null. Which means they are this page element not another page.
+						if(!empty($form['submitted']['contact_information']))
+						{
+							$form['submitted']['contact_information']["#prefix"] = "<div id='site_helper_contact_information_profile_info'>";
+							$form['submitted']['contact_information']["#suffix"] = "</div>";
+							$form['submitted']['contact_information']["use_your_profile_info"] = array(
+								'#type' => 'button', 
+								'#value' => t('Use your profile info'), 
+								'#weight' => -19,
+								'#prefix' => '<div class="button_wrapper use_your_profile_info">',
+								'#suffix' => '</div>',
+							);
+							$form['submitted']['contact_information']["use_your_profile_info"]["#ahah"] = array(
+							  'path' => 'site_helper/webform/use_your_profile_info/js',
+							  'wrapper' => 'site_helper_contact_information_profile_info',
+							  'method' => 'replace',
+							  'effect' => 'fade',
+							  'event' =>'click',
+							);
+						}
+						
+					}
+					
+				}
+				//Get the insurable members' auto-fill functionality done. - end
+				//Get the login user account profile auto-fill related fields functionality done - end
+				
+				
+				//Initialize the form state.
+				//Get insurance product from the path.
+				$insurance_product = $_GET['insurance_product'];
+				$start = $_GET['start'];
+				$end = $_GET['end'];
+				$amount = $_GET['amount'];
+				
+				if( isset($insurance_product) && !empty($form["submitted"]["insurance_product"]) )
+				{
+					
+					$form["submitted"]["insurance_product"]["#default_value"] = $insurance_product;
+					$form_state["post"]["submitted"]["insurance_product"] = $insurance_product;					
+					site_helper_webform_coverage_and_deductible_js_preparing_output(&$form,&$form_state);
+				}else{
+					if(!empty($form["submitted"]["insurance_product"]["#default_value"]))
+					{
+						site_helper_webform_coverage_and_deductible_js_preparing_output(&$form,&$form_state);
+					}
+				}
+				if(isset($start) && !empty($form["submitted"]["travel_dates"]["effective_date"]) && !empty($form["submitted"]["travel_dates"]["canada_arrival_date"]))
+				{
+					
+					$form["submitted"]["travel_dates"]["effective_date"]["#default_value"] = $start; 
+					$form["submitted"]["travel_dates"]["canada_arrival_date"]["#default_value"] = $start;
+				}
+				if(isset($end) && !empty($form["submitted"]["travel_dates"]["expiry_date"]))
+				{
+					$form["submitted"]["travel_dates"]["expiry_date"]["#default_value"] = $end;
+				}
+				
+				if(isset($amount) && !empty($form["submitted"]["insurable_members"]["coverage_and_deductible"]["sum_insured"]))
+				{
+					$form["submitted"]["insurable_members"]["coverage_and_deductible"]["sum_insured"]["#default_value"] = $amount;
+				}
+				
+				if(!empty($form["submitted"]["insurance_product"]))
+				{
+					$form["submitted"]["insurable_members"]["coverage_and_deductible"]["#prefix"] = "<div id='site_helper_coverage_and_deductible'>";
+					$form["submitted"]["insurable_members"]["coverage_and_deductible"]["#suffix"] = "</div>";
+					$form["submitted"]["insurance_product"]["#ahah"] = array(
+					  'path' => 'site_helper/webform/coverage_and_deductible/js',
+					  'wrapper' => 'site_helper_coverage_and_deductible',
+					  'method' => 'replace',
+					  'effect' => 'fade',
+					  'event' =>'change',
+					);
+				}
+				
+				//Put the form_state values to form_state storage.
+				if( isset($form_state["storage"]["custom_submitted_tree"]) )
+				{
+					if(isset($form_state["values"]["submitted_tree"]))
+					{
+						$form_state["storage"]["custom_submitted_tree"] = array_merge($form_state["storage"]["custom_submitted_tree"],$form_state["values"]["submitted_tree"]);
+					}
+					
+				}else{
+					$form_state["storage"]["custom_submitted_tree"] = array();
+					if(isset($form_state["values"]["submitted_tree"]))
+					{
+						$form_state["storage"]["custom_submitted_tree"] = array_merge($form_state["storage"]["custom_submitted_tree"],$form_state["values"]["submitted_tree"]);
+					}
+				}
+				
+				//Second Step - total of 4 steps
+				//Add validation function to avoid none existing price for the seniors.
+				if($form_state["webform"]["page_count"] == ($form_state["webform"]["page_num"]+2))
+				{
+					$form["#validate"][] = "site_helper_check_price_existing_for_insured_validate";
+				}
+				
+				
+				//Second final step rendering
+				if($form_state["webform"]["page_count"] == ($form_state["webform"]["page_num"]+1))
+				{
+					//TODO switch the form_state to storage!!!!!! and fuck
+					//This flag is needed to check whether we need to show the question.
+					$show_question = false;
+					foreach (element_children($form_state["storage"]["custom_submitted_tree"]["insurable_members"]) as $child) 
+					{
+						$pos = strpos($child,"insured_");
+						
+						//The children are existing and not null. Which means they are this page element not another page.
+						if($pos !== false && !empty($form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]))
+						{
+							$tem_arr = explode("_",$child);
+							$insured_delta = $tem_arr[sizeof($tem_arr) - 1];
+
+							$non_empty_insured = true;
+							$question_for_insured = "";
+							foreach($form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child] as $child_k => $child_v)
+							{
+								if($child_k == "the_insured_you_have")
+								{
+									continue;
+								}
+								if(empty($child_v))
+								{
+									$non_empty_insured = false;
+								}
+							}
+							
+							if($non_empty_insured)
+							{//not empty insured will be pre-select the pre-existing option.
+								//With pre-existing stable medical coverage.
+								$insurance_node = node_load($form_state["storage"]["custom_submitted_tree"]["insurance_product"]);
+                $the_insured_start = $form_state["storage"]["custom_submitted_tree"]["travel_dates"]["effective_date"];
+                $birthday = ($form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["birth_date"]);
+                $the_insured_age = site_helper_get_which_age_by_node($insurance_node, $birthday, $the_insured_start);
+								$the_inusred_amount = $form_state["storage"]["custom_submitted_tree"]["insurable_members"]["coverage_and_deductible"]["sum_insured"];
+								$the_insured_end = $form_state["storage"]["custom_submitted_tree"]["travel_dates"]["expiry_date"];
+								$the_insured_dedutible = $form_state["storage"]["custom_submitted_tree"]["insurable_members"]["coverage_and_deductible"]["select_a_deductible_amount"];
+								$the_insured_with_pre_existing = "yes";
+								
+								$price_with_pre_existing = site_helper_get_price_by_insurance(
+									$insurance_node, 
+									$the_insured_age, 
+									$the_inusred_amount, 
+									$the_insured_start, 
+									$the_insured_end, 
+									$the_insured_dedutible, 
+									$the_insured_with_pre_existing
+								);
+								
+								//Without pre-existing stable medical coverage.
+								$the_insured_without_pre_existing = "no";
+								
+								$price_without_pre_existing = site_helper_get_price_by_insurance(
+									$insurance_node, 
+									$the_insured_age, 
+									$the_inusred_amount, 
+									$the_insured_start, 
+									$the_insured_end, 
+									$the_insured_dedutible, 
+									$the_insured_without_pre_existing
+								);
+								
+								$form["submitted"]["question_1"]["do_you_want_pre_existing_condition_covered_".$insured_delta]["#title"] = $form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["surname"].
+										" ".$form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["given_name"];
+										
+								if( !empty($price_without_pre_existing) && $price_without_pre_existing != "n/a" && !empty($price_with_pre_existing) && $price_with_pre_existing != "n/a" )
+								{
+									$show_question = true;
+								}else{
+									
+									$form["submitted"]["question_1"]["do_you_want_pre_existing_condition_covered_".$insured_delta]['#disabled'] = TRUE;
+									//Only have price with pre-exisitng
+									
+									if( !empty($price_with_pre_existing) && $price_with_pre_existing != "n/a" )
+									{
+										$form["submitted"]["question_1"]["do_you_want_pre_existing_condition_covered_".$insured_delta]['#default_value'] = "yes";
+										$form["submitted"]["question_1"]["do_you_want_pre_existing_condition_covered_".$insured_delta]["#description"] = t("Pre-existing condition is automatically covered.");
+									}
+									//Only have price withOUT pre-exisitng
+									if( !empty($price_without_pre_existing)  && $price_without_pre_existing != "n/a" )
+									{
+										$form["submitted"]["question_1"]["do_you_want_pre_existing_condition_covered_".$insured_delta]['#default_value'] = "no";
+										$form["submitted"]["question_1"]["do_you_want_pre_existing_condition_covered_".$insured_delta]["#description"] = t("Pre-existing condition coverage is not applicable.");
+									}
+									//Have no price at all.
+									if( (empty($price_without_pre_existing)  || $price_without_pre_existing == "n/a") && (empty($price_with_pre_existing)  || $price_with_pre_existing == "n/a") )
+									{
+
+									}
+								}
+								
+							}else{
+								//Emtpy insured will be hide the pre-exisitng options.
+								$form["submitted"]["question_1"]["do_you_want_pre_existing_condition_covered_".$insured_delta]['#type'] = 'hidden';
+							
+							}
+						}
+						
+					}
+					
+					if($show_question)
+					{
+						
+					}else{
+						//if not showing questions, just go to final page.
+						
+						
+					}
+				}
+
+				//Final step rendering
+				if($form_state["webform"]["page_count"] == $form_state["webform"]["page_num"])
+				{
+					$output = "";
+					$insurance_node = node_load($form_state["storage"]["custom_submitted_tree"]["insurance_product"]);
+					$insurance_title = $insurance_node->title;
+					$insurance_title_wrapper = "<div class='insurance_title'>".$insurance_title."</div>";
+					
+					
+					
+					$start_time = strtotime( $form_state["storage"]["custom_submitted_tree"]["travel_dates"]["effective_date"] );
+					$end_time = strtotime( $form_state["storage"]["custom_submitted_tree"]["travel_dates"]["expiry_date"] );
+					
+					//total days
+					$days = (($end_time - $start_time)/(60*60*24))+1;
+					$days = round($days);
+	
+					$output .= $insurance_title_wrapper;
+					
+					//Get all the insurables info ready in order to get the total premium.
+					$insurables = "";
+					$total_premium = 0;
+					
+					//Family plan handling.
+					$family_premium = 0;
+					$family_member_highest_price = 0;
+					$family_plan = false;
+					$family_plan_str = "no";
+					if( empty($form_state["storage"]["custom_submitted_tree"]["insurable_members"]["family_plan"]) )
+					{
+						$family_plan = false;
+						$family_plan_str = "no";
+					}else{
+						$family_plan = true;
+						$family_plan_str = "yes";
+					}
+					
+					foreach(element_children($form_state["storage"]["custom_submitted_tree"]["insurable_members"]) as $child) 
+					{
+						$pos = strpos($child,"insured_");
+						
+						//The children are existing and not null. Which means they are this page element not another page.
+						if($pos !== false && !empty($form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["surname"]) && !empty($form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["given_name"]) && !empty($form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["birth_date"]))
+						{	
+							$insured_delta = substr($child, -1);    // returns "1","2",...
+							$the_insured_start = $form_state["storage"]["custom_submitted_tree"]["travel_dates"]["effective_date"];
+              $birthday = ($form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["birth_date"]);
+              $the_insured_age = site_helper_get_which_age_by_node($insurance_node, $birthday, $the_insured_start);
+							$the_inusred_amount = $form_state["storage"]["custom_submitted_tree"]["insurable_members"]["coverage_and_deductible"]["sum_insured"];
+							
+							$the_insured_end = $form_state["storage"]["custom_submitted_tree"]["travel_dates"]["expiry_date"];
+							$the_insured_dedutible = $form_state["storage"]["custom_submitted_tree"]["insurable_members"]["coverage_and_deductible"]["select_a_deductible_amount"];
+							$the_insured_with_pre_existing = $form_state["storage"]["custom_submitted_tree"]["question_1"]["do_you_want_pre_existing_condition_covered_".$insured_delta];
+							
+              
+              
+							$the_insured_premium_item = site_helper_get_price_by_insurance(
+								$insurance_node, 
+								$the_insured_age, 
+								$the_inusred_amount, 
+								$the_insured_start, 
+								$the_insured_end, 
+								$the_insured_dedutible, 
+								$the_insured_with_pre_existing
+							);
+							
+							$form["submitted"]["premium"]["premium_".$insured_delta]["#default_value"] = $the_insured_premium_item;
+							
+							//Family plan handling.
+							$family_member_highest_price = ($family_member_highest_price > $the_insured_premium_item) ? $family_member_highest_price : $the_insured_premium_item;
+							$family_premium = $family_member_highest_price * 2;
+							
+							$total_premium += $the_insured_premium_item;
+							$insurables .= '
+										<tr>
+											<td class="sub_header">'.$form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["surname"].' '.$form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["given_name"].' ('.$form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["gender"].')</td>
+											<td class="sub_header">'.$form_state["storage"]["custom_submitted_tree"]["insurable_members"][$child]["birth_date"].' ('.t("@d year old",array("@d"=>$the_insured_age)).')</td>
+											<td class="sub_header">'.$the_insured_with_pre_existing.'</td>
+											<td style="text-align:center;'.($family_plan ? "text-decoration: line-through;" : "").'" class="sub_header ">$'.$the_insured_premium_item.' CAD</td>
+										</tr>';
+						}
+					}
+					
+					if($family_plan)
+					{
+						$total_premium = $family_premium;
+						$insurables .= '
+										<tr>
+											<td class="sub_header" colspan="3">'.t("Family Plan (the highest member's premium x2)").'</td>
+											<td style="text-align:center;" class="sub_header">$'.$total_premium.' CAD</td>
+										</tr>';
+					}else{
+						
+					}
+					$form["submitted"]["premium"]["total_premium"]["#default_value"] = $total_premium;
+					
+					$output .= '
+						<table cellspacing="0" cellpadding="0" class="print_table">
+							<tbody>
+								<tr>
+									<td colspan="4" class="header">'.t("Policy Details").'</td>
+								</tr>
+								<tr>
+									<td class="sub_header">'.t("Application Date").'</td>
+									<td class="data">'.date("Y-m-d").'</td>
+									<td class="sub_header">'.t("Reference Number").':</td>
+									<td class="data">'.$form["#submission"]->sid.'</td>
+								</tr>
+								<tr>
+									<td class="sub_header">'.t('Effective Date').'</td>
+									<td class="data">'.$form_state["storage"]["custom_submitted_tree"]["travel_dates"]["effective_date"].'</td>
+									<td class="sub_header">'.t("Canada Arrival Date").'</td>
+									<td class="data">'.$form_state["storage"]["custom_submitted_tree"]["travel_dates"]["canada_arrival_date"].'</td>
+								</tr>
+								<tr>
+									<td class="sub_header">'.t("Expiry Date").'</td>
+									<td class="data">'.$form_state["storage"]["custom_submitted_tree"]["travel_dates"]["expiry_date"].'</td>
+									<td class="sub_header">'.t("Family Plan").'</td>
+									<td class="data">'.t($family_plan_str).'</td>
+								</tr>
+								<tr>
+									<td class="sub_header">'.t("Trip Length").'</td>
+									<td class="data">'.$days.t(" days").'</td>
+									<td class="sub_header">'.t("Total Premium").'</td>
+									<td class="data">$'.$total_premium.' CAD</td>
+								</tr>
+							</tbody>
+						</table><br/>
+						<table cellspacing="0" cellpadding="0" class="print_table">
+							<tbody>
+								<tr>
+									<td class="header" colspan="4">'.t("Coverage Details").'</td>
+								</tr>
+								<tr>
+									<td colspan="4" class="data">'.$insurance_title.'</td>
+								</tr>
+								<tr>
+									<td class="sub_header">'.t("Deductible").'</td>
+									<td class="data">$'.$form_state["storage"]["custom_submitted_tree"]["insurable_members"]["coverage_and_deductible"]["select_a_deductible_amount"].' CAD</td>
+									<td class="sub_header">'.t("Sum Insured").'</td>
+									<td class="data">$'.$form_state["storage"]["custom_submitted_tree"]["insurable_members"]["coverage_and_deductible"]["sum_insured"].' CAD</td>
+								</tr>
+								<tr>
+									<td class="sub_header">'.t("Beneficiary").'</td>
+									<td colspan="3" class="data">'.$form_state["storage"]["custom_submitted_tree"]["insurable_members"]["beneficiary"].'</td>
+								</tr>
+							</tbody>
+						</table><br/>
+						<table cellspacing="0" cellpadding="0" class="print_table">
+							<tbody>
+								<tr>
+									<td class="header" colspan="4">'.t("Insurable Members").':</td>
+								</tr>
+								<tr>
+									<td style="width:30%;" class="data">'.t("Family Name, Given Name").'</td>
+									<td style="width:20%;" class="data">'.t("Birth Date (Age)").'</td>
+									<td style="width:30%;" class="data">'.t("With stable pre-existing medical condition coverage").'</td>									
+									<td style="text-align:center;" class="data">'.t("Premium").'</td>
+								</tr>';
+
+					
+					$output .=	$insurables;			
+					$output .=	'
+							</tbody>
+						</table>
+					';
+					
+					
+					
+					$suffix_output = '
+										<div class="contact_review" style="width:100%;text-align:center;">
+											<table cellspacing="0" cellpadding="0" class="print_table">
+												<tbody>
+													<tr>
+														<td class="header">'.t("Canadian Address").':</td>
+													</tr>
+													<tr>
+														<td>
+															<div>'.$form_state["storage"]["custom_submitted_tree"]["canadian_address"]["address_line_1"].' 
+																'.$form_state["storage"]["custom_submitted_tree"]["canadian_address"]["address_line_2"].'<br/>
+																'.$form_state["storage"]["custom_submitted_tree"]["canadian_address"]["city"].', '.$form_state["storage"]["custom_submitted_tree"]["canadian_address"]["province"].' '.$form_state["storage"]["custom_submitted_tree"]["canadian_address"]["postal_code"].'</br>
+																'.$form_state["storage"]["custom_submitted_tree"]["canadian_address"]["phone_1"].' '.$form_state["storage"]["custom_submitted_tree"]["canadian_address"]["phone_2"].'
+															</div>
+														</td>
+													</tr>
+												</tbody>
+											</table><br>
+											<table cellspacing="0" cellpadding="0" class="print_table">
+												<tbody>
+													<tr>
+														<td class="header">'.t("Contact").':</td>
+													</tr>
+													<tr>
+														<td>
+															<div>
+																<span class="name">'.$form_state["storage"]["custom_submitted_tree"]["contact_information"]["surname"].' '.$form_state["storage"]["custom_submitted_tree"]["contact_information"]["given_name"].' </span><br/>
+																<span class="email">'.t("Email Address").': '.$form_state["storage"]["custom_submitted_tree"]["contact_information"]["email_address"].'</span><br/>
+																<span class="phone">'.t("Contact Phone").': '.$form_state["storage"]["custom_submitted_tree"]["contact_information"]["phone_number"].' </span><br/>
+																
+															</div>
+														</td>
+													</tr>
+												</tbody>
+											</table><br>
+										</div>
+					';
+					
+					$output .= $suffix_output;
+					$form["submitted"]["purchase_review"]["#value"] = $output;
+					
+					/*
+					$form["#suffix"] .= $suffix_output; */
+					
+					
+				}
+				
+				//dpm($form);
+				//dpm($form_state);
+			break;
+		}
+
+	}
+
+	function site_helper_webform_client_form_84_submit($form, &$form_state){
+		
+		$submitted_tree = $form_state["values"]["submitted_tree"];
+		drupal_goto("visitor-travel-insurance","birthday=".$submitted_tree['birthday']."&amount=".$submitted_tree['insurance_amount']."&start=".$submitted_tree['start_date']."&end=".$submitted_tree['end_date']);
+		
+	}
+	
+	
+	/**
+	 * Menu callback for AHAH additions.
+	 */
+	function site_helper_webform_coverage_and_deductible_js() {
+		
+		$form_state = array('storage' => NULL, 'submitted' => FALSE, 'rebuild' => TRUE);
+		//$form_state = array('storage' => NULL, 'submitted' => FALSE);
+		$form_build_id = $_POST['form_build_id'];
+		// Get the form from the cache.
+		$form = form_get_cache($form_build_id, $form_state);
+		$args = $form['#parameters'];
+		$form_id = array_shift($args);
+		// We will run some of the submit handlers so we need to disable redirecting.
+		$form['#redirect'] = FALSE;
+		// We need to process the form, prepare for that by setting a few internals
+		// variables.
+		$form['#post'] = $_POST;
+		$form['#programmed'] = FALSE;
+		$form['#cache'] = TRUE;
+		$form_state['post'] = $_POST;
+		
+		$form_state['action'] = $form['#action'];
+		
+		
+		// Skip validation in project issue.
+		_skip_validation_skip_validation($form, 'full');
+		
+		// Build, validate and if possible, submit the form.
+		drupal_process_form($form_id, $form, $form_state);
+		// This call recreates the form relying solely on the form_state that the
+		// drupal_process_form set up.
+		$form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+		
+		
+		$coverage_and_deductible_forms = &$form["submitted"]["insurable_members"]["coverage_and_deductible"];
+		site_helper_webform_coverage_and_deductible_js_preparing_output(&$form,&$form_state);
+		
+		$output = theme('status_messages') .  drupal_render($coverage_and_deductible_forms);
+		//$output = drupal_render($coverage_and_deductible_forms);
+		drupal_json(array('status' => TRUE, 'data' => $output));
+	}
+	
+	/**
+	 * Menu callback for AHAH additions.
+	 */
+	function site_helper_webform_the_insured_js($insured_delta) {
+	
+		include_once 'modules/node/node.pages.inc';
+		$form_state = array('storage' => NULL, 'submitted' => FALSE, 'rebuild' => TRUE);
+		$form_build_id = $_POST['form_build_id'];
+		// Get the form from the cache.
+		$form = form_get_cache($form_build_id, $form_state);
+		$args = $form['#parameters'];
+		$form_id = array_shift($args);
+		// We will run some of the submit handlers so we need to disable redirecting.
+		$form['#redirect'] = FALSE;
+		// We need to process the form, prepare for that by setting a few internals
+		// variables.
+		$form['#post'] = $_POST;
+		$form['#programmed'] = FALSE;
+		$form_state['post'] = $_POST;
+		
+		$form_state['action'] = $form['#action'];
+		
+		// Skip validation in project issue.
+		_skip_validation_skip_validation($form, 'full');
+		
+		// Build, validate and if possible, submit the form.
+		drupal_process_form($form_id, $form, $form_state);
+		// This call recreates the form relying solely on the form_state that the
+		// drupal_process_form set up.
+		$form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+		
+		//Preparing the value change for elements.
+		$insured_fieldset = &$form['submitted']['insurable_members']['insured_'.$insured_delta];
+		unset($insured_fieldset['#prefix'], $insured_fieldset['#suffix']); // Prevent duplicate wrappers.
+
+		
+		$given_name = &$form['submitted']['insurable_members']['insured_'.$insured_delta]['given_name'];
+		$surname = &$form['submitted']['insurable_members']['insured_'.$insured_delta]['surname'];
+		$birth_date = &$form['submitted']['insurable_members']['insured_'.$insured_delta]['birth_date'];
+		$gender = &$form['submitted']['insurable_members']['insured_'.$insured_delta]['gender'];
+		
+		
+		//Load the select "the insured"
+		$the_insured = $form_state["post"]["submitted"]["insurable_members"]['insured_'.$insured_delta]["the_insured_you_have"];
+		$ti_node = node_load($the_insured);
+		
+		$given_name["#value"] = $ti_node->field_given_name[0]["value"];
+		$surname["#value"] = $ti_node->field_surname[0]["value"];
+		$field_insured_birthday = explode("T",$ti_node->field_insured_birthday[0]["value"]);//2012-02-01T00:00:00
+		
+		/**Birthday value assign*/
+		$date_arr = explode("-",$field_insured_birthday[0]);
+		
+		$new_date_arr["month"] =  $date_arr[1];
+		$new_date_arr["year"] =  $date_arr[0];
+		$new_date_arr["day"] =  $date_arr[2];
+		
+		$birth_date["month"]["#value"] = intval($new_date_arr["month"]);
+		$birth_date["year"]["#value"] = intval($new_date_arr["year"]);
+		$birth_date["day"]["#value"] = intval($new_date_arr["day"]);
+		
+		$gender["#value"] = $ti_node->field_user_gender[0]["value"];
+
+		//$output = theme('status_messages') .  drupal_render($insured_fieldset);
+		$output = drupal_render($insured_fieldset);
+		drupal_json(array('status' => TRUE, 'data' => $output));
+	}
+	
+	
+	
+	/**
+	 * Menu callback for AHAH additions.
+	 */
+	 /*
+	function site_helper_webform_the_insured_dob_js($insured_delta) {
+	
+		include_once 'modules/node/node.pages.inc';
+		$form_state = array('storage' => NULL, 'submitted' => FALSE, 'rebuild' => TRUE);
+		$form_build_id = $_POST['form_build_id'];
+		// Get the form from the cache.
+		$form = form_get_cache($form_build_id, $form_state);
+		$args = $form['#parameters'];
+		$form_id = array_shift($args);
+		// We will run some of the submit handlers so we need to disable redirecting.
+		$form['#redirect'] = FALSE;
+		// We need to process the form, prepare for that by setting a few internals
+		// variables.
+		$form['#post'] = $_POST;
+		$form['#programmed'] = FALSE;
+		$form_state['post'] = $_POST;
+		
+		$form_state['action'] = $form['#action'];
+		
+		// Skip validation in project issue.
+		_skip_validation_skip_validation($form, 'full');
+		
+		// Build, validate and if possible, submit the form.
+		drupal_process_form($form_id, $form, $form_state);
+		// This call recreates the form relying solely on the form_state that the
+		// drupal_process_form set up.
+		$form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+		
+		//Preparing the value change for elements.
+		$insured_fieldset = &$form['submitted']['insurable_members']['insured_'.$insured_delta];
+		
+		$pre_existing = &$form['submitted']['insurable_members']['insured_'.$insured_delta]['do_you_want_pre_existing_condition_covered'];
+		
+		unset(
+			$pre_existing['#prefix'], 
+			$pre_existing['#suffix']); // Prevent duplicate wrappers.
+		
+		$birth_date = &$form['submitted']['insurable_members']['insured_'.$insured_delta]['birth_date'];		
+		
+		//Load the select "the insured"
+		$the_insured = $form_state["post"]["submitted"]["insurable_members"]['insured_'.$insured_delta]["the_insured_you_have"];
+		$ti_node = node_load($the_insured);
+		
+
+		$field_insured_birthday = explode("T",$ti_node->field_insured_birthday[0]["value"]);//2012-02-01T00:00:00
+		
+		
+		$date_arr = explode("-",$field_insured_birthday[0]);
+		
+		$new_date_arr["month"] =  $date_arr[1];
+		$new_date_arr["year"] =  $date_arr[0];
+		$new_date_arr["day"] =  $date_arr[2];
+		
+		$birth_date["month"]["#value"] = intval($new_date_arr["month"]);
+		$birth_date["year"]["#value"] = intval($new_date_arr["year"]);
+		$birth_date["day"]["#value"] = intval($new_date_arr["day"]);
+		
+		$output = theme('status_messages') .  drupal_render($pre_existing);
+		//$output = drupal_render($pre_existing);
+		drupal_json(array('status' => TRUE, 'data' => $output));
+	}*/
+	
+	/**
+	 * Menu callback for AHAH additions.
+	 */
+	function site_helper_webform_use_your_profile_address_js() {
+	
+		include_once 'modules/node/node.pages.inc';
+		$form_state = array('storage' => NULL, 'submitted' => FALSE, 'rebuild' => TRUE);
+		$form_build_id = $_POST['form_build_id'];
+		// Get the form from the cache.
+		$form = form_get_cache($form_build_id, $form_state);
+		$args = $form['#parameters'];
+		$form_id = array_shift($args);
+		// We will run some of the submit handlers so we need to disable redirecting.
+		$form['#redirect'] = FALSE;
+		// We need to process the form, prepare for that by setting a few internals
+		// variables.
+		$form['#post'] = $_POST;
+		$form['#programmed'] = FALSE;
+		$form_state['post'] = $_POST;
+		
+		$form_state['action'] = $form['#action'];
+		
+		// Skip validation in project issue.
+		_skip_validation_skip_validation($form, 'full');
+		
+		// Build, validate and if possible, submit the form.
+		drupal_process_form($form_id, $form, $form_state);
+		// This call recreates the form relying solely on the form_state that the
+		// drupal_process_form set up.
+		$form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+		
+		//Preparing the value change for elements.
+		$canadian_address = &$form['submitted']['canadian_address'];
+		unset($canadian_address['#prefix'], $canadian_address['#suffix']); // Prevent duplicate wrappers.
+
+		
+		$address_line_1 = &$form['submitted']['canadian_address']['address_line_1'];
+		$address_line_2 = &$form['submitted']['canadian_address']['address_line_2'];
+		$city = &$form['submitted']['canadian_address']['city'];
+		$province = &$form['submitted']['canadian_address']['province'];
+		$postal_code = &$form['submitted']['canadian_address']['postal_code'];
+		
+		$phone_1 = &$form['submitted']['canadian_address']['phone_1'];
+		$phone_2 = &$form['submitted']['canadian_address']['phone_2'];
+		
+		//Load the select "the insured"
+		global $user;
+		$profile = content_profile_load("profile",$user->uid);
+		
+		$address_line_1["#value"] = $profile->field_user_address[0]["street"];
+		$address_line_2["#value"] = $profile->field_user_address[0]["additional"];
+		$city["#value"] = $profile->field_user_address[0]["city"];
+		$province["#value"] = $profile->field_user_address[0]["province"];
+		$postal_code["#value"] = $profile->field_user_address[0]["postal_code"];
+		
+		$phone_1["#value"] = $profile->field_phone_number[0]["value"];
+		$phone_2["#value"] = $profile->field_phone_number[1]["value"];
+		
+		//$output = theme('status_messages') .  drupal_render($canadian_address);
+		$output = drupal_render($canadian_address);
+		drupal_json(array('status' => TRUE, 'data' => $output));
+		
+	}
+	
+	
+	/**
+	 * Menu callback for AHAH additions.
+	 */
+	function site_helper_webform_use_your_profile_info_js() {
+	
+		include_once 'modules/node/node.pages.inc';
+		$form_state = array('storage' => NULL, 'submitted' => FALSE, 'rebuild' => TRUE);
+		$form_build_id = $_POST['form_build_id'];
+		// Get the form from the cache.
+		$form = form_get_cache($form_build_id, $form_state);
+		$args = $form['#parameters'];
+		$form_id = array_shift($args);
+		// We will run some of the submit handlers so we need to disable redirecting.
+		$form['#redirect'] = FALSE;
+		// We need to process the form, prepare for that by setting a few internals
+		// variables.
+		$form['#post'] = $_POST;
+		$form['#programmed'] = FALSE;
+		$form_state['post'] = $_POST;
+		
+		$form_state['action'] = $form['#action'];
+		
+		// Skip validation in project issue.
+		_skip_validation_skip_validation($form, 'full');
+		
+		// Build, validate and if possible, submit the form.
+		drupal_process_form($form_id, $form, $form_state);
+		// This call recreates the form relying solely on the form_state that the
+		// drupal_process_form set up.
+		$form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+		
+		//Preparing the value change for elements.
+		$contact_information = &$form['submitted']['contact_information'];
+		unset($contact_information['#prefix'], $contact_information['#suffix']); // Prevent duplicate wrappers.
+
+		
+		$given_name = &$form['submitted']['contact_information']['given_name'];
+		$surname = &$form['submitted']['contact_information']['surname'];
+		$gender = &$form['submitted']['contact_information']['gender'];
+		$phone_number = &$form['submitted']['contact_information']['phone_number'];
+		$email_address = &$form['submitted']['contact_information']['email_address'];
+		
+		//Load the select "the insured"
+		global $user;
+		$profile = content_profile_load("profile",$user->uid);
+		
+		$given_name["#value"] = $profile->field_given_name[0]["value"];
+		$surname["#value"] = $profile->field_surname[0]["value"];
+		$gender["#value"] = $profile->field_user_gender[0]["value"];
+		$phone_number["#value"] = $profile->field_phone_number[0]["value"];
+		$email_address["#value"] = $user->mail;
+		
+		//$output = theme('status_messages') .  drupal_render($contact_information);
+		$output = drupal_render($contact_information);
+		drupal_json(array('status' => TRUE, 'data' => $output));
+		
+	}
+	
+	/*Get the available Deductible Amount by nid**/
+	function site_helper_options_available_select_a_deductible_amount($nid)
+	{
+		if(!empty($nid))
+		{
+			$sql =  "
+				
+				SELECT node.title AS node_title,
+					node.nid AS nid,
+					node_data_field_0_deductible.field_0_deductible_value AS node_data_field_0_deductible_field_0_deductible_value,
+					node_data_field_0_deductible.field_50_deductible_value AS node_data_field_0_deductible_field_50_deductible_value,
+          node_data_field_0_deductible.field_75_deductible_value AS node_data_field_0_deductible_field_75_deductible_value,
+					node_data_field_0_deductible.field_100_deductible_value AS node_data_field_0_deductible_field_100_deductible_value,
+					node_data_field_0_deductible.field_250_deductible_value AS node_data_field_0_deductible_field_250_deductible_value,
+					node_data_field_0_deductible.field_500_deductible_value AS node_data_field_0_deductible_field_500_deductible_value,
+					node_data_field_0_deductible.field_1000_deductible_value AS node_data_field_0_deductible_field_1000_deductible_value,
+					node_data_field_0_deductible.field_2500_deductible_value AS node_data_field_0_deductible_field_2500_deductible_value,
+					node_data_field_0_deductible.field_3000_deductible_value AS node_data_field_0_deductible_field_3000_deductible_value,					
+					node_data_field_0_deductible.field_5000_deductible_value AS node_data_field_0_deductible_field_5000_deductible_value,
+					node_data_field_0_deductible.field_10000_deductible_value AS node_data_field_0_deductible_field_10000_deductible_value,
+					node.created AS node_created
+				FROM {node} node 
+				LEFT JOIN {content_type_insurance} node_data_field_0_deductible ON node.vid = node_data_field_0_deductible.vid
+				WHERE (node.type in ('insurance')) AND (node.status = 1) AND (node.nid = %d )
+				ORDER BY node_created ASC
+
+			";
+			$results = db_query($sql,$nid);
+			$node = db_fetch_object($results);
+			$fetch_arr = array(
+				"0"=>$node->node_data_field_0_deductible_field_0_deductible_value,
+				"50"=>$node->node_data_field_0_deductible_field_50_deductible_value,
+        "75"=>$node->node_data_field_0_deductible_field_75_deductible_value,
+				"100"=>$node->node_data_field_0_deductible_field_100_deductible_value,
+				"250"=>$node->node_data_field_0_deductible_field_250_deductible_value,
+				"500"=>$node->node_data_field_0_deductible_field_500_deductible_value,
+				"1000"=>$node->node_data_field_0_deductible_field_1000_deductible_value,
+				"2500"=>$node->node_data_field_0_deductible_field_2500_deductible_value,
+				"3000"=>$node->node_data_field_0_deductible_field_3000_deductible_value,
+				"5000"=>$node->node_data_field_0_deductible_field_5000_deductible_value,
+				"10000"=>$node->node_data_field_0_deductible_field_10000_deductible_value,
+			);
+			foreach($fetch_arr as $key => $val)
+			{
+				if(isset($val))
+				{
+					$options[$key] = "$".$key." CAD";
+				}
+			}
+			return $options;
+		}
+		
+	}
+	
+	/*Get available insurance coverage**/
+	function site_helper_options_available_sum_insured($nid)
+	{
+		if(!empty($nid))
+		{
+			$sql =  "
+				
+				SELECT node.title AS node_title,
+					node.nid AS nid,
+					node_data_field_0_deductible.field_0_deductible_value AS node_data_field_0_deductible_field_0_deductible_value,
+					node_data_field_0_deductible.field_50_deductible_value AS node_data_field_0_deductible_field_50_deductible_value,
+					node_data_field_0_deductible.field_100_deductible_value AS node_data_field_0_deductible_field_100_deductible_value,
+					node_data_field_0_deductible.field_250_deductible_value AS node_data_field_0_deductible_field_250_deductible_value,
+					node_data_field_0_deductible.field_500_deductible_value AS node_data_field_0_deductible_field_500_deductible_value,
+					node_data_field_0_deductible.field_2500_deductible_value AS node_data_field_0_deductible_field_2500_deductible_value,
+					node_data_field_0_deductible.field_1000_deductible_value AS node_data_field_0_deductible_field_1000_deductible_value,
+					node_data_field_0_deductible.field_3000_deductible_value AS node_data_field_0_deductible_field_3000_deductible_value,
+					node_data_field_0_deductible.field_5000_deductible_value AS node_data_field_0_deductible_field_5000_deductible_value,
+					node_data_field_0_deductible.field_10000_deductible_value AS node_data_field_0_deductible_field_10000_deductible_value,
+					node.created AS node_created,
+					node_data_field_0_deductible.field_rate_schedule_value AS node_data_field_0_deductible_field_rate_schedule_value
+				FROM {node} node 
+				LEFT JOIN {content_type_insurance} node_data_field_0_deductible ON node.vid = node_data_field_0_deductible.vid
+				WHERE (node.type in ('insurance')) AND (node.status = 1) AND (node.nid = %d )
+				ORDER BY node_created ASC
+
+			";
+			$results = db_query($sql,$nid);
+			$node = db_fetch_object($results);
+			
+			$rsv = unserialize($node->node_data_field_0_deductible_field_rate_schedule_value);	
+			$new_rsv = array();
+			
+			foreach($rsv as $key => $val)
+			{
+				//rebuild the arrary from 1 dimension array to 2 dimension array.
+				$key_arr = explode("_",$key);
+				$new_rsv[$key_arr[1]][$key_arr[2]] = $val;
+			}
+			
+			//First Row of the price is the coverage.
+			foreach($new_rsv[0] as $key => $val)
+			{
+				if(intval($val) != 0)
+				{
+					$options[$val] = "$".$val." CAD";
+				}
+				
+			}
+			
+			return $options;
+		}
+		
+	}
+	
+	//preparing the $form and $form_state for the ajax output
+	function site_helper_webform_coverage_and_deductible_js_preparing_output(&$form,&$form_state)
+	{
+		// Render the new output.
+		if(!empty($form["submitted"]["insurable_members"]["coverage_and_deductible"]) && !empty($form["submitted"]["insurable_members"]["coverage_and_deductible"]["about_this_insurance"]["insurance_info"]))
+		{
+			$coverage_and_deductible_forms = &$form["submitted"]["insurable_members"]["coverage_and_deductible"];
+			unset($coverage_and_deductible_forms['#prefix'], $coverage_and_deductible_forms['#suffix']); // Prevent duplicate wrappers.
+			$sum_insured_element = &$coverage_and_deductible_forms["sum_insured"];
+			$select_a_deductible_amount = &$coverage_and_deductible_forms["select_a_deductible_amount"];
+			$insurance_info = &$coverage_and_deductible_forms["about_this_insurance"]["insurance_info"];
+			
+			//Building the options.
+			$product = $form_state["post"]["submitted"]["insurance_product"] ? $form_state["post"]["submitted"]["insurance_product"] : $form["submitted"]["insurance_product"]["#default_value"];
+			$deductible_amount_options = site_helper_options_available_select_a_deductible_amount($product);
+			$coverage_options = site_helper_options_available_sum_insured($product);
+			
+			//Assign new value
+			$sum_insured_element["#options"] = $coverage_options;
+			$select_a_deductible_amount["#options"] = $deductible_amount_options;
+				//Get insurance info.
+			$tem_view = views_get_view('search_utility');
+			$display = $tem_view->execute_display( 'block_1',array($product));
+			$insurance_info["#value"] = ($display["content"]);
+			
+		}
+		
+	}
+	
+	/**Helper function to translate all the webform lables*/
+	function site_helper_translate_webform(&$p_element)
+	{
+		if(isset($p_element["#title"]))
+		{
+			$p_element["#title"] = t($p_element['#title']);
+		}
+		foreach (element_children($p_element) as $element) { 
+			
+			// Pass each webform component title through the t() function. 
+			site_helper_translate_webform(&$p_element[$element]);
+			
+		}
+	}
+	
+	/*Helper function to get the total price for arguments
+		
+		@arguments:
+			- $node - $product node 
+			- $age - the insured age.
+			- $amount - The insured converage.
+			- $start - start date
+			- $end - end date
+			- $dedutible - dedutible amount 
+			- $with_pre_existing - yes/no
+	**/
+	function site_helper_get_price_by_insurance($node, $age, $amount, $start, $end, $dedutible, $with_pre_existing)
+	{
+		//	?q=en/visitor-travel-insurance-internal-price-search&age=4&amount=50000&start=2012-02-27&end=2012-02-28&node=66&dedutible=50&with-pre-existing=yes
+		
+		$none_str = "n/a";
+
+		//Insurance Amount
+
+		$start_time = strtotime( $start );
+		$end_time = strtotime( $end );
+		
+		//total days
+		$days = (($end_time - $start_time)/(60*60*24))+1;
+		$days = round($days);
+		$field_100_ded_max_discount_value = $node->field_100_ded_max_discount[0]["value"];
+		$field_500_ded_max_discount_value = $node->field_500_ded_max_discount[0]["value"];
+		$field_1000_ded_max_discount_value = $node->field_1000_ded_max_discount[0]["value"];
+		
+		/**RSV PRICE  START
+    With stable pre-existing medical condition coverage price schedule
+    ****/
+		$rsv = unserialize($node->field_rate_schedule[0]["value"]);	
+		$new_rsv = array();
+		
+		//Breaking array key from "cell_0_0" to array[0][0]
+		if(!empty($rsv))
+		{
+			foreach($rsv as $key => $val)
+			{
+				//rebuild the arrary from 1 dimension array to 2 dimension array.
+				$key_arr = explode("_",$key);
+				$new_rsv[$key_arr[1]][$key_arr[2]] = $val;
+			}
+			
+			//row is the horizontal count. @check TIC- JF table.
+			// Get the match age row in the table.
+			$row = "";
+			foreach($new_rsv as $key => $val)
+			{
+				$age_ranges_str = $val[0];
+				//"0-25"
+				if(strpos($age_ranges_str,"-") !== false)
+				{
+					$age_arr = explode("-",$age_ranges_str);
+					$age_arr[0] = intval($age_arr[0]);
+					$age_arr[1] = intval($age_arr[1]);
+					if( $age_arr[0] <= $age && $age <= $age_arr[1] )
+					{
+						$row = $key;
+						break;
+					}
+				}
+			}
+			//Column is the vertical count. @check TIC- JF table.
+			// Get the match amount column in the table.
+			$column = "";
+			foreach($new_rsv[0] as $key => $val)
+			{
+				if($val == $amount)
+				{
+					$column = $key;
+					break;
+				}
+			}
+
+			//Get the price here.
+			if(!empty($row) && !empty($column))
+			{
+				//If price is found in the table, calculate it.
+				$price = $new_rsv[$row][$column];
+				if($price == $none_str)
+				{
+					$price = null;
+					$total_price = null;
+				}else{
+					$total_price = $price * $days;
+				}
+				
+			}else
+			{//If the price couldn't be found in the table.
+				$price = null;
+				$total_price = null;
+			}
+		}
+		
+		/**RSV PRICE  END****/
+		
+		
+		
+		/**RSNSV PRICE  START
+      Without stable pre-existing medical condition coverage price schedule 
+    ****/
+		$rsnsv = unserialize($node->field_rate_schedule_no_spmcc[0]["value"]);
+		if(!empty($rsnsv))
+		{
+			$new_rsnsv = array();
+			foreach($rsnsv as $key => $val)
+			{
+				//rebuild the arrary from 1 dimension array to 2 dimension array.
+				$key_arr = explode("_",$key);
+				$new_rsnsv[$key_arr[1]][$key_arr[2]] = $val;
+			}
+			//row is the horizontal count.
+			//Search the age range and get the age row in the table.
+			$row_rsnsv = "";
+			foreach($new_rsnsv as $key => $val)
+			{
+				$age_ranges_str = $val[0];
+				//"0-25"
+				if(strpos($age_ranges_str,"-") !== false)
+				{
+					$age_arr = explode("-",$age_ranges_str);
+					$age_arr[0] = intval($age_arr[0]);
+					$age_arr[1] = intval($age_arr[1]);
+					if( $age_arr[0] <= $age && $age <= $age_arr[1] )
+					{
+						$row_rsnsv = $key;
+						break;
+					}
+				}
+			}
+			//Column is the vertical count.
+			//Get the coverage column in the table.
+			$column_rsnsv = "";
+			foreach($new_rsnsv[0] as $key => $val)
+			{
+				if($val == $amount)
+				{
+					$column_rsnsv = $key;
+				}
+			}
+		}
+		
+		
+		
+		
+		//Get the price here.
+		if(!empty($row_rsnsv) && !empty($column_rsnsv))
+		{
+			//If price is found in the table, calculate it.
+			$price_rsnsv = $new_rsnsv[$row_rsnsv][$column_rsnsv];
+			if($price_rsnsv == $none_str)
+			{
+				$price_rsnsv = null;
+				$total_price_rsnsv = null;
+			}else{
+				$total_price_rsnsv = $price_rsnsv * $days;
+			}
+		}else
+		{
+			//If the price couldn't be found in the table.
+			$price_rsnsv = null;
+			$total_price_rsnsv = null;
+		}
+		
+		if(!isset($price_rsnsv) && !isset($price))
+		{
+			return;
+		}
+		
+		
+		
+		/**RSNSV PRICE  END****/
+		
+		
+		//initialize the array.
+		$ded_arr = array(
+			"0"=>$node->field_0_deductible[0]["value"],
+			"50"=>$node->field_50_deductible[0]["value"],
+      "75"=>$node->field_75_deductible[0]["value"],
+			"100"=>$node->field_100_deductible[0]["value"],
+			"250"=>$node->field_250_deductible[0]["value"],
+			"500"=>$node->field_500_deductible[0]["value"],
+			"1000"=>$node->field_1000_deductible[0]["value"],
+			"2500"=>$node->field_2500_deductible[0]["value"],
+			"5000"=>$node->field_5000_deductible[0]["value"],
+			"10000"=>$node->field_10000_deductible[0]["value"],
+		);
+		if($amount >= 100000 && $days >= 365)
+		{
+			$ded_arr["3000"] = $node->field_3000_deductible[0]["value"];
+		}
+		
+		//This is only for TIC Visitor to Canada Emergency & Hospital.
+		//Changed required by John on June 7 2012.
+		//Detailed requirement: there is no limit for 3000 dedutible. Neither the age limite nor the insurance amount limit or insurance duration days limit.
+		if($node->nid == 87)
+		{
+			$ded_arr["3000"] = $node->field_3000_deductible[0]["value"];
+		}
+		   
+    //This is only for TIC JF optimum.
+    //Changed required by John on June 7 2012.
+    //Detailed requirement: there is only one limit for 3000 dedutible. The insurance amount needs to be $100,000 and up.Neither the age limit nor insurance duration days limit.
+    if($node->nid == 66)
+    {
+      //３０００和１０００的垫底费只适用于１０万和１５万保额一年期的计划的所有年龄段
+      if($amount >= 100000  && $days >= 365)
+      {
+        $ded_arr["1000"] = $node->field_1000_deductible[0]["value"];
+        $ded_arr["3000"] = $node->field_3000_deductible[0]["value"];
+      }else{
+        unset($ded_arr["1000"]);
+        unset($ded_arr["3000"]);
+      }
+    }
+		
+		//this is only for ETFS.
+		if($node->nid == 83)
+		{
+			$ded_arr["3000"] = $node->field_3000_deductible[0]["value"];
+		}
+		
+		$new_ded_arr = array();
+		foreach($ded_arr as $k=>$v)
+		{
+			if( isset($v) && ($dedutible == $k) )
+			{
+				$v = 1+floatval($v);
+				$new_ded_arr[$k] = $v;
+			}
+		}
+
+		//when age is small than 86, print discount price
+		$field_discount_age_limit_value = isset($node->field_discount_age_limit[0]["value"])? $node->field_discount_age_limit[0]["value"] : 9999;
+		
+		//If this insurance has "surcharge to premium" set up. Used in TU insurance.
+		$field_surcharge_value = $node->field_surcharge[0]["value"];
+		if(isset($price_rsnsv) && !isset($price) && $field_surcharge_value)
+		{
+			//Surcharge portion is not appliable to "dedutiable discount". Hence we seperate this portion. Used in TU.
+			$tu_price_rsnsv_surcharge = $price_rsnsv * ($field_surcharge_value);
+			$total_tu_price_rsnsv_surcharge = $tu_price_rsnsv_surcharge * $days;
+			
+			//TU has age limit on coverage with pre-existing stable medical. It is 80
+			if($age < 80){
+				$price = $price_rsnsv;
+				$total_price = $price * $days;
+			}
+
+		}
+		
+		if($age < $field_discount_age_limit_value){
+			foreach($new_ded_arr as $key => $value){
+			
+				
+				
+				if(!empty($price))
+				{
+					$final_price = $price*$value;
+					$final_total_price = $total_price*$value;
+				}
+				
+				//If this is TU, and the surcharge portion is not appliable to "dedutiable discount". 
+				if( !empty($tu_price_rsnsv_surcharge) && $field_surcharge_value)
+				{
+					$final_price += $tu_price_rsnsv_surcharge;
+					$final_total_price += $total_tu_price_rsnsv_surcharge;
+				}
+				
+				if(!empty($price_rsnsv))
+				{
+					$final_price_rsnsv = $price_rsnsv*$value;
+					$final_total_price_rsnsv = $total_price_rsnsv*$value;
+				}
+				$ded_max_discount_field = "field_".$key."_ded_max_discount";
+				$appliable_max_discount_arr = $node->$ded_max_discount_field;
+				$appliable_max_discount = $appliable_max_discount_arr[0]["value"];
+				if(!empty($appliable_max_discount))
+				{
+					if(!empty($price))
+					{
+						//If the price isn't null, total price won't be null either.
+						//Total_price = original price before discount.
+						//final_total_price = original price applies with discount rate.
+						$tem = $total_price+$total_tu_price_rsnsv_surcharge - $appliable_max_discount;
+						$final_total_price = $final_total_price > $tem ? $final_total_price : $tem;
+					}
+					if(!empty($price_rsnsv))
+					{
+						//If the price isn't null, total price won't be null either.
+						$tem = $total_price_rsnsv - $appliable_max_discount;
+						$final_total_price_rsnsv = $final_total_price_rsnsv > $tem ? $final_total_price_rsnsv : $tem;
+					}
+				}
+
+				if($with_pre_existing == "yes")
+				{	
+					if(!empty($total_price)){return round($final_total_price,2);}else{return $none_str;};
+				}else{
+					if(!empty($total_price_rsnsv)){return round($final_total_price_rsnsv,2);}else{return $none_str;};
+				}
+
+			}
+		}else{
+			//When age over 85, print original price. And there is no other deductible.
+		
+			if(!empty($node->field_over_85_deductible[0]["value"])){
+				
+				
+				//Do this for 21 CENTERY ONELY
+				if($node->nid == 78)
+				{
+					foreach($new_ded_arr as $key => $value){
+						if($value < $node->field_over_85_deductible[0]["value"]){continue;}
+						$final_total_price = $total_price * $value;
+						$final_total_price_rsnsv = $total_price_rsnsv * $value;
+						if($with_pre_existing == "yes")
+						{	
+							if(!empty($total_price)){return round($final_total_price,2);}else{return $none_str;};
+						}else{
+							if(!empty($total_price_rsnsv)){return round($final_total_price_rsnsv,2);}else{return $none_str;};
+						}
+					
+					}
+						
+				}
+				
+				//Do this for TIC JF
+				if($node->nid == 66)
+				{
+					foreach($new_ded_arr as $key => $value){
+						if($value < $node->field_over_85_deductible[0]["value"]){continue;}
+						$final_total_price = $total_price * $value;
+						$final_total_price_rsnsv = $total_price_rsnsv * $value;
+						if($with_pre_existing == "yes")
+						{	
+							if(!empty($total_price)){return round($final_total_price,2);}else{return $none_str;};
+						}else{
+							if(!empty($total_price_rsnsv)){return round($final_total_price_rsnsv,2);}else{return $none_str;};
+						}
+					
+					}
+						
+				}
+				
+				//Do this for TIC
+				if($node->nid == 87)
+				{
+					foreach($new_ded_arr as $key => $value){
+						if($value < $node->field_over_85_deductible[0]["value"]){continue;}
+						$final_total_price = $total_price * $value;
+						$final_total_price_rsnsv = $total_price_rsnsv * $value;
+						if($with_pre_existing == "yes")
+						{	
+							if(!empty($total_price)){return round($final_total_price,2);}else{return $none_str;};
+						}else{
+							if(!empty($total_price_rsnsv)){return round($final_total_price_rsnsv,2);}else{return $none_str;};
+						}
+					
+					}
+						
+				}
+				
+				//Normal insurance
+				if($with_pre_existing == "yes")
+				{
+					if(!empty($total_price)){return round($total_price,2);}else{return $none_str;};
+				}else{
+					if(!empty($total_price_rsnsv)){return round($total_price_rsnsv,2);}else{return $none_str;};
+				}
+			}
+		}
+	}
+	
+	/**
+	*	Helper function to calculate the age bases on the dob
+	**/
+	function site_helper_age_from_dob($dob, $start_date = null) {
+    $birthday_time = strtotime($dob);
+    //If there is no start date, then use current time.
+    if(!empty($start_date)){
+      $start_time = strtotime($start_date);
+      $age = ( date("md", $birthday_time) > date("md",$start_time) ? ( ( date("Y",$start_time)- date("Y", $birthday_time) )-1 ) : ( date("Y",$start_time) - date("Y", $birthday_time) ) );
+    }else{
+      $age = ( date("md", $birthday_time) > date("md") ? ( ( date("Y") - date("Y", $birthday_time) ) - 1 ) : ( date("Y") - date("Y", $birthday_time) ) );    
+    }
+    $age = $age > 0 ? $age : 0;
+    return $age;
+	}
+	
+	/**
+		Validation function for webform 166
+	**/
+	
+	function site_helper_check_price_existing_for_insured_validate(&$form, $form_state)
+	{    
+		foreach (element_children($form_state["values"]["submitted"]["insurable_members"]) as $child) 
+		{
+			$pos = strpos($child,"insured_");
+			
+			//The children are existing and not null. Which means they are this page element not another page.
+			if($pos !== false && !empty($form_state["values"]["submitted"]["insurable_members"][$child]))
+			{
+				$tem_arr = explode("_",$child);
+				$insured_delta = $tem_arr[sizeof($tem_arr) - 1];
+
+				$non_empty_insured = true;
+				$question_for_insured = "";
+				foreach($form_state["values"]["submitted"]["insurable_members"][$child] as $child_k => $child_v)
+				{
+					if($child_k == "the_insured_you_have")
+					{
+						continue;
+					}
+					if(empty($child_v))
+					{
+						$non_empty_insured = false;
+					}
+				}
+				
+				if($non_empty_insured)
+				{//not empty insured will be pre-select the pre-existing option.
+					//With pre-existing stable medical coverage.
+					$insurance_node = node_load($form_state["values"]["submitted"]["insurance_product"]);
+					
+          $effective_date = $form_state["values"]["submitted"]["travel_dates"]["effective_date"]["year"]."-".$form_state["values"]["submitted"]["travel_dates"]["effective_date"]["month"]."-".$form_state["values"]["submitted"]["travel_dates"]["effective_date"]["day"];
+					$the_insured_start = $effective_date;
+					$birthday = $form_state["values"]["submitted"]["insurable_members"][$child]["birth_date"]["year"]."-".$form_state["values"]["submitted"]["insurable_members"][$child]["birth_date"]["month"]."-".$form_state["values"]["submitted"]["insurable_members"][$child]["birth_date"]["day"];
+          $the_insured_age = site_helper_get_which_age_by_node($insurance_node, $birthday, $the_insured_start);
+          
+          $nid = $form_state["values"]["submitted"]["insurance_product"];
+          //if this is : Travel Guard-Gold Visitors to Canada Emergency Medical Plan
+          if( ($nid == "1581") && ($the_insured_age >= 60 && $the_insured_age <= 84)){
+            
+            $effective_date_month = $form_state["values"]["submitted"]["travel_dates"]["effective_date"]["month"];
+            $effective_date_day = $form_state["values"]["submitted"]["travel_dates"]["effective_date"]["day"];
+            $effective_date_year = $form_state["values"]["submitted"]["travel_dates"]["effective_date"]["year"];
+            
+            $expiry_date_month = $form_state["values"]["submitted"]["travel_dates"]["expiry_date"]["month"];
+            $expiry_date_day = $form_state["values"]["submitted"]["travel_dates"]["expiry_date"]["day"];
+            $expiry_date_year = $form_state["values"]["submitted"]["travel_dates"]["expiry_date"]["year"];
+            
+            if($effective_date_month && $effective_date_day && $effective_date_year && $expiry_date_month && $expiry_date_day && $expiry_date_year){
+              $start_time = strtotime( $effective_date_year."-".$effective_date_month."-".$effective_date_day );
+              $end_time = strtotime( $expiry_date_year."-".$expiry_date_month."-".$expiry_date_day );
+
+              //total days
+              $days = (($end_time - $start_time)/(60*60*24))+1;
+              $days = round($days);        
+            }
+            //travel guard gold plan: 60-84岁最多只能够买183天
+            $max_purchased_days = 183;
+            if($days > $max_purchased_days){
+              form_set_error('submitted][travel_dates][expiry_date', t("We are sorry, this plan : 'Travel Guard-Gold Visitors to  Canada Emergency Medical Plan' can't be purchased more than @d days for age 60-84!",array("@d"=>$max_purchased_days) ) );
+            }
+
+          }
+          
+          
+          
+					$the_inusred_amount = $form_state["values"]["submitted"]["insurable_members"]["coverage_and_deductible"]["sum_insured"];
+					
+					$effective_date = $form_state["values"]["submitted"]["travel_dates"]["effective_date"]["year"]."-".$form_state["values"]["submitted"]["travel_dates"]["effective_date"]["month"]."-".$form_state["values"]["submitted"]["travel_dates"]["effective_date"]["day"];
+					$the_insured_start = $effective_date;
+
+					$expiry_date = $form_state["values"]["submitted"]["travel_dates"]["expiry_date"]["year"]."-".$form_state["values"]["submitted"]["travel_dates"]["expiry_date"]["month"]."-".$form_state["values"]["submitted"]["travel_dates"]["expiry_date"]["day"];					
+					$the_insured_end = $expiry_date;
+					
+					$the_insured_dedutible = $form_state["values"]["submitted"]["insurable_members"]["coverage_and_deductible"]["select_a_deductible_amount"];
+					$the_insured_with_pre_existing = "yes";
+					
+					$price_with_pre_existing = "";
+					$price_with_pre_existing = site_helper_get_price_by_insurance(
+						$insurance_node, 
+						$the_insured_age, 
+						$the_inusred_amount, 
+						$the_insured_start, 
+						$the_insured_end, 
+						$the_insured_dedutible, 
+						$the_insured_with_pre_existing
+					);
+					
+					//Without pre-existing stable medical coverage.
+					$the_insured_without_pre_existing = "no";
+					
+					$price_without_pre_existing = "";
+					$price_without_pre_existing = site_helper_get_price_by_insurance(
+						$insurance_node, 
+						$the_insured_age, 
+						$the_inusred_amount, 
+						$the_insured_start, 
+						$the_insured_end, 
+						$the_insured_dedutible, 
+						$the_insured_without_pre_existing
+					);
+					//Have no price at all.
+					if( (empty($price_without_pre_existing)  || $price_without_pre_existing == "n/a") && (empty($price_with_pre_existing)  || $price_with_pre_existing == "n/a") )
+					{
+						form_set_error('submitted][insurable_members][insured_'.$insured_delta.'][birth_date', t("We are sorry, we can't find the price for the insured @d with this product!",array("@d"=>$insured_delta) ) );
+					}
+					
+				}
+			}
+			
+		}
+		
+	}
+  
+  /*Get age value bases on node's which age field
+  * @args:
+  *   - $node -> node object
+  *   - $birthday -> birthday date
+  *   - $start -> start date
+  * @return
+  *   - age -> which age to calculate the price
+  **/
+  function site_helper_get_which_age_by_node($node, $birthday, $start){
+    $which_age = $node->field_insurance_which_age[0]["value"];
+    switch($which_age){
+      case "effective_date_age":
+        //get age from birthday and start time
+        $age = site_helper_age_from_dob($birthday,$start);
+        break;
+      case "purchase_date_age": 
+      default:
+        //get age from birthday
+        $age = site_helper_age_from_dob($birthday);
+        break;
+    }
+    $age = $age > 0 ? $age : 0;
+    return $age;
+  }

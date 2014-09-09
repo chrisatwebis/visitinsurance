@@ -1,0 +1,13 @@
+name = Webform Ajax Page
+description = Load webform pages by AJAX.
+core = 6.x
+dependencies[] = webform
+package = Webform
+
+
+; Information added by drupal.org packaging script on 2011-02-25
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "webform_ajax"
+datestamp = "1298620708"
+

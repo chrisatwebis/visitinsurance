@@ -1,0 +1,8 @@
+; $Id: site_helper.info,v 1.0 2010/11/07 14:27:33 chris chen Exp $
+
+name = "Site Helper"
+description = "Prvoide the custom functionality for this site."
+core = 6.x
+version = 6.x-1.0
+
+

@@ -1,0 +1,60 @@
+<?php
+/**
+ * @file Install imageapi_text
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function imageapi_text_install() {
+  drupal_set_message(t("
+    ImageAPI Text settings can be configured at Administer İ Site configuration İ ImageAPI > Configure > !settings_link.
+    There you can set font search paths and unicode handling preferences.
+  ", array('!settings_link' => l('ImageAPI Text', 'admin/settings/imageapi/config/text')) ));
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function imageapi_text_uninstall() {
+  variable_del('imageapi_text_fontpath');
+}
+
+/**
+ * This schema is only here to inform ctools export functions that we have 
+ * something worth saving. It is NOT REALLY used to define a DB table.
+ * All our settings actually go into the variables table.
+ */
+function imageapi_text_schema() {
+  $schema['imageapi_text_style'] = array(
+    'description' => t('Settings for text styles.'),
+    'export' => array(
+      'key' => 'name',
+      'module' => 'imageapi_text',
+      'identifier' => 'style', // Exports will be as $style
+      'default hook' => 'default_imageapi_text_style',  // Function hook name.
+      'api' => array(
+        'owner' => 'imageapi_text',
+        'api' => 'default_imageapi_text_styles',  // Base name for api include files.
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'sid' => array(
+        'type' => 'int',
+      ),
+      'name' => array(
+        'type' => 'string',
+      ),
+      'style' => array(
+        'type' => 'string',
+      ),
+      'fontfile' => array(
+        'type' => 'string',
+      ),
+    ),
+   'primary key' => array('sid'),
+  );
+  return $schema;
+}

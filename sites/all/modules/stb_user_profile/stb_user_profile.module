@@ -1,0 +1,15 @@
+<?php
+
+/*
+*	Implementation of hook_theme
+* 	Sets the templates that don't override by default
+*/
+
+function stb_user_profile_theme($existing, $type, $theme, $path)
+{
+	return array(
+		"user_profile" => array(
+			"template" => "includes/user-profile",
+		),
+	);
+}

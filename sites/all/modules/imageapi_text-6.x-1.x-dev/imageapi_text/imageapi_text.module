@@ -1,0 +1,1344 @@
+<?php
+/**
+ * @file
+ * 
+ * Routines to assist ImageAPI to draw text as part of the ImageAPI or
+ * ImageCache pipeline.
+ * 
+ * Used by imagecache_actions (DRUPAL-6--2) and signwriter2 (proof of concept)
+ * 
+ * Many credits to the original signwriter.module for ideas and solved problems.
+ * 
+ * This is a library utility, with few settings. It provides features that
+ * are used by other modules.
+ * 
+ * It presents a central interface for font locating and setting. These settings
+ * are at:
+ * 
+ * Administer : Site configuration : ImageAPI : Configure : ImageAPI Text
+ * 
+ * /admin/settings/imageapi/config/text
+ * 
+ * FOR DEVELOPERS: 
+ * Text images can be made on the fly by calling
+ * imageapi_image_create_text(), which will return an imageapi image object you
+ * can then save, manipulate or return.
+ * 
+ * To integrate text configurations in your own module, you can embed
+ * imageapi_text_style_widget() into your own form.
+ * 
+ * TODO ImageMagick. 
+ * An ImageMagick version of this would be interesting to see,
+ * although I can't imagine how the current imageMagick pipeline would support
+ * it. Using the PHP ImageMagick extension is probably more likely.
+ * 
+ * PLUGINS:
+ * Experimental support for 'effects' as contributed extras is in the 'effects'
+ * directory.
+ * @see embedded_underline.inc
+ * 
+ * 
+ * @see syntax_reference.html
+ */
+
+/**
+ * @defgroup imageapi_text
+ * @{
+ */
+
+/**
+ * In  case I need to move this around
+ */
+define('IMAGEAPI_TEXT_ADMIN_PATH', 'admin/settings/imageapi/text');
+
+/**
+ * Menu callbacks need a count of the path fragments, starting from 0
+ */
+define('IMAGEAPI_TEXT_ADMIN_PATH_DEPTH', 3);
+
+/**
+ * Implementation of hook_menu().
+ * 
+ * Place the configs next to the other imageapi config options as a LOCAL_TASK.
+ * 
+ * @ingroup drupal_hooks
+ */
+function imageapi_text_menu() {
+  $items = array();
+  $items[IMAGEAPI_TEXT_ADMIN_PATH] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imageapi_text_style_list'),
+    'access arguments' => array('administer imageapi'),
+    'title' => 'ImageAPI Text',
+    'description' => 'List and modify all ImageAPI text styles.',
+    'file' => 'imageapi_text.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items[IMAGEAPI_TEXT_ADMIN_PATH . '/styles'] = array(
+    'title' => 'ImageAPI Text Styles',
+    'weight' => 1,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items[IMAGEAPI_TEXT_ADMIN_PATH . '/settings'] = array(
+    'title' => 'ImageAPI Text Settings',
+    'description' => 'Settings for ImageAPI text rendering.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imageapi_text_settings'),
+    'access arguments' => array('administer imageapi'),
+    'file' => 'imageapi_text.admin.inc',
+    'weight' => 2,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items[IMAGEAPI_TEXT_ADMIN_PATH . '/settings/test'] = array(
+    'title' => 'Test ImageAPI text',
+    'description' => 'Run a test suite over some effects.',
+    'page callback' => 'imageapi_text_test_page',
+    'access arguments' => array('administer imageapi'),
+    'file' => 'tests/imageapi_text.test.inc',
+    'weight' => 2,
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items[IMAGEAPI_TEXT_ADMIN_PATH . '/styles/add'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imageapi_text_style_edit'),
+    'access arguments' => array('administer imageapi'),
+    'title' => 'Add a text style',
+    'file' => 'imageapi_text.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items[IMAGEAPI_TEXT_ADMIN_PATH . '/styles/%imageapi_text_style'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imageapi_text_style_edit', IMAGEAPI_TEXT_ADMIN_PATH_DEPTH + 2),
+    'access arguments' => array('administer imageapi'),
+    'title' => 'Edit this style %style_name',
+    'title callback' => 'imageapi_text_style_get_name',
+    'title arguments' => array(IMAGEAPI_TEXT_ADMIN_PATH_DEPTH + 2), 
+    'file' => 'imageapi_text.admin.inc',
+    #'type' => MENU_LOCAL_TASK, 
+    'type' => MENU_CALLBACK, 
+    // There is no default local task at this level so it won't show
+    // But this at least helps maintain the breadcrumbs trail
+  );
+  $items[IMAGEAPI_TEXT_ADMIN_PATH . '/styles/%imageapi_text_style/delete'] = array(
+    'page callback' => 'imageapi_text_style_delete_callback',
+    'page arguments' => array(IMAGEAPI_TEXT_ADMIN_PATH_DEPTH + 2),
+    'access arguments' => array('administer imageapi'),
+    'title' => 'Delete text style',
+    'file' => 'imageapi_text.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  // Import/export, based on ctools methods
+  // Requires ctools, fails if not present
+  if (module_exists('ctools')) {
+    $items[IMAGEAPI_TEXT_ADMIN_PATH . '/styles/%imageapi_text_style/export'] = array(
+      'page callback' => 'imageapi_text_style_export_page',
+      'page arguments' => array(IMAGEAPI_TEXT_ADMIN_PATH_DEPTH + 2),
+      'access arguments' => array('administer imageapi'),
+      'title' => 'Export text style',
+      'file' => 'imageapi_text.export.inc',
+      'type' => MENU_LOCAL_TASK, 
+      // although this local task is too deep to show, it does at least set the breadcrumbs appropriately
+    );
+    $items[IMAGEAPI_TEXT_ADMIN_PATH . '/styles/import'] = array(
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('imageapi_text_style_import_form'),
+      'access arguments' => array('administer imageapi'),
+      'title' => 'Import text style',
+      'file' => 'imageapi_text.export.inc',
+      'type' => MENU_LOCAL_TASK,
+    );
+  }
+
+  // This will build a non-cached text image based on parameters in the URL
+  $items['imageapi_text/dynamic'] = array(
+    'title' => 'Dynamically generate ImageAPI Text',
+    'page callback' => 'imageapi_text_dynamic_callback',
+    'page arguments' => array(2),
+    'access arguments' => array('administer imageapi'),
+    'file' => 'imageapi_text.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+
+/**
+ * Menu autoloader for style profiles
+ * 
+ * @ingroup imageapi_text crud
+ * 
+ * @param $sid Style ID (may also be a $style object)
+ */
+function imageapi_text_style_load($sid) {
+  // May be given a partial style object to load
+  if (! is_string($sid)) {
+    if (is_object($sid) && !empty($sid->sid)) {
+      $sid = $sid->sid;
+    }
+    else {
+      drupal_set_message("Cannot load unavailable style." . print_r($sid,1), 'error');
+      return NULL;
+    }
+  }
+  // Normal fetch and load from var table
+  $styles = imageapi_text_style_load_all();
+  return @$styles[$sid];
+}
+
+/**
+ * Load all available styles
+ * 
+ * @ingroup imageapi_text crud
+ */
+function imageapi_text_style_load_all() {
+  return variable_get('imageapi_text_styles', array());
+}
+
+
+/**
+ * Return default settings for prefilling the form fields.
+ * 
+ * @return array of configs defining a useful default text style.
+ */
+function imageapi_text_style_default() {
+  $defaults = (object)array(
+    'name' => 'Default style',
+    'sid' => 0,  
+    'style' => "font-size:12px;\nfill:#333333;",
+    'fontfile' => drupal_get_path('module', 'imageapi_text') . '/fonts/liberation-fonts-1.04/LiberationSans-Regular.ttf',
+  );
+  return $defaults;
+}
+
+/**
+ * Small accessor used for title callback in hook_menu()
+ */
+function imageapi_text_style_get_name($style) {
+  return $style->name;
+}
+
+/**
+ * Convert the SVG-like style string into a named array of attributes we can use
+ * internally.
+ * 
+ * Pretty naive split-based parser - not a tokenizer, will not respect quotes.
+ * 
+ * It will fill in any basic, missing values if they are not provided, (we
+ * always need a size and color) unless the $defaults flag is set false.
+ * 
+ * @param string containing style definition
+ * @param return array of attributes and values parsed from the string
+ */
+function imageapi_text_parse_style($style, $defaults = TRUE) {
+  // Set defaults to begin with
+  $style_atts = $defaults ? array(
+    'font-size' => 12,  
+    'fill' => '#333333',  
+    'opacity' => 1,
+    'rotate' => 0,
+  ) : array();
+  // List of attributes that are expected to return numeric values
+  $number_vals = array(
+  # these take keyword-phrases also
+#    'top', 
+#    'bottom', 
+#    'left', 
+#    'right', 
+    'font-size', 
+    'line-height', 
+    'stroke-width', 
+    'width', 
+    'height', 
+    'min-width', 
+    'max-width', 
+    'min-height', 
+    'max-height', 
+    'padding-left', 
+    'padding-right', 
+    'padding-top', 
+    'padding-bottom', 
+    'border',
+    'text-shadow-blur',
+    'text-shadow-x',
+    'text-shadow-y',
+  );
+  $percent_vals = array(
+    'opacity', 
+    'stroke-opacity', 
+    'text-shadow_opacity'
+  );
+
+  $att_lines = explode(';', $style);
+
+  foreach ($att_lines as $att_line) {
+    $att_line = trim($att_line);
+    if (empty($att_line)) continue;
+
+    list($key, $val) = explode(':', $att_line);
+    $key = trim($key);
+    $val = trim($val);
+
+    if (empty($key) || empty($val) ) {
+      trigger_error("Syntax problem in font style definition '<strong>$att_line</strong>'\n Full code:'<pre>$style</pre>'", E_USER_ERROR);
+      return FALSE;
+    }
+    // Trim the 'px' from number values and make them ints
+    // Although % are also allowed.
+    if (in_array($key, $number_vals)) {
+      if (substr($val, strlen($val)-1, 1) == '%') {
+        // May need cleaning up (whitespace?)
+        $val = intval($val) . '%';
+      }
+      else {
+        $val = intval($val);
+      }
+    }
+
+    if (in_array($key, $percent_vals)) {
+      $val = 0 + $val;
+      // handle percentages as well as decimals
+      if ($val > 1) {
+        $val = $val/100;
+      }
+    }
+    $style_atts[$key] = $val;
+
+    // special parsing.
+    if ($key == 'transform') {
+      $style_atts['transforms'] = array(); // internal array
+      // We cannot handle more than rotate right now, 
+      // but allow other syntax without breaking.
+      // Syntax allows any number of individual transforms in a row.
+      // Transform processes are bounded by close braces, I guess
+      $transform_list = explode(')', $val);
+      foreach ($transform_list as $transform_func) {
+        $transform_func = trim($transform_func);
+        if (empty($transform_func)) continue;
+
+        list($func_name, $func_arg) = explode('(', $transform_func);
+        $func_name = trim($func_name);
+        
+        // This will destroy some sequenced transforms - but we don't support that anyway.
+        $style_atts['transforms'][trim($func_name)] = trim($func_arg);
+
+        // finally we can see if it's a rotate - the only thing we understand.
+        if ($func_name == 'rotate') {
+          // rotate is allowed to have 3 params. We only care about the first
+          $style_atts['rotate'] = intval($func_arg);
+        }
+      }
+    }
+    if ($key == 'text-shadow') {
+      // text-shadow: 0px 1px 1px #000;
+      $att_list = preg_split('/\s+/', trim($val));
+      $shadow_names = array(
+       'text-shadow-x', 
+       'text-shadow-y', 
+       'text-shadow-blur', 
+       'text-shadow-color',
+      );
+      // The spec allows for color to come before or after the numbers. What a bore.
+      if ($att_list[0][0] == '#') {
+        array_push($att_list, array_shift($att_list));
+      }
+      if (count($shadow_names) == count($att_list)) {
+        $shadow_vals = array_combine($shadow_names, $att_list);
+        // Cast some of these to ints
+        foreach($shadow_vals as $s_key => $s_val) {
+          if (in_array($s_key, $number_vals)) {
+            $shadow_vals[$s_key] = intval($s_val);
+          }
+        }
+        $style_atts = array_merge($style_atts, $shadow_vals);
+      }
+      else {
+        trigger_error("Parse problem with text-shadow settings, ignoring shadow settings. ". join(',', $att_list) , E_USER_ERROR );
+        unset($style_atts['text-shadow']);
+      }
+    }
+  }
+  # TODO Is it worth warning about unknown atts
+  # or would that interfere with future extensions?
+  
+  return $style_atts;
+}
+
+/**
+ * The imageapi version doesn't key the results
+ * 
+ * I think it's better if we do.
+ * 
+ * @ingroup utility
+ */
+function imageapi_text_hex2rgba($hex) {
+  $unkeyed = imageapi_hex2rgba($hex);
+  $keyed = array_combine(array('red', 'green', 'blue', 'alpha'), $unkeyed);
+  // bad alpha produces solid black.
+  if ($keyed['alpha'] > 127) {
+    watchdog('imageapi_text', 'Bad alpha value in hex color %hex. Alpha channel cannot be greater than #7F (127)', array('%hex' => $hex), WATCHDOG_NOTICE);
+  }
+  return $keyed;
+}
+
+/**
+ * Creates a file, saves it in the filesystem and returns the path to it
+ * 
+ * Analogous to signwriter_image() from signwriter.
+ * 
+ * Validity of the text should have already been checked by now
+ * 
+ * @return the filepath of the image, creating it if it doesn't already exist.
+ * NULL on failure.
+ */
+function imageapi_text_get_cached_image_filepath($text, $style, $destination = NULL) {
+  if (empty($destination)) {
+    // Generate a hash filename for it
+    $destination = imagecache_text_generate_cachename($text, $style, $destination); 
+  }
+  if (! is_readable($destination)) {
+    $success = imageapi_text_create_image($text, $style, $destination);
+    if (! $success) {
+      watchdog('imageapi_text', 'failed to create an image at %destination using text style %style_name', array('%destination' => $destination, '%style_name' => $style->name), WATCHDOG_ERROR);
+      return NULL;
+    }
+  }
+  return $destination;
+}
+
+/**
+ * Actually make the image
+ * 
+ * @return success;
+ */
+function imageapi_text_create_image($text, $style, $destination) {
+  if (empty($destination)) {
+    watchdog('imageapi_text', __FUNCTION__ . " called with no destination filepath. This means we can't save the image.", array(), WATCHDOG_ERROR);
+    return FALSE;
+  }
+  // Prepare the imageapi routine. 
+  // Need a dummy imageapi image object first
+  imageapi_text_check_mime_type($style);
+  $image = new stdClass();
+  $image->info = array(
+    'mime_type' => $style->mime_type,
+    'extension' => $style->extension,
+    'source' => '',
+  );
+  $image->toolkit = imageapi_default_toolkit();
+
+  // Now draw the text.
+  imageapi_image_create_text($image, $text, $style);
+  // Get imageapi to save it
+  return imageapi_image_close($image, $destination);
+}
+
+/**
+ * Generate a hash filepath based on the text and all aspects of the
+ * current style.
+ *
+ * @param $text
+ *   Text to look up in cache
+ * @param $imagetype
+ *   Type of the image
+ */
+function imagecache_text_generate_cachename($text, $style) {
+  $cachedir = variable_get('imageapi_text_cachedir', file_directory_path() .'/imageapi-text');
+  file_check_directory($cachedir, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+  $imagefileid = "$text-". serialize($style);
+  $key = md5($imagefileid);
+
+  // for shorter filenames that are still unique and repeatable (for caching)
+  $imagefilename = preg_replace('/[^\w\d]/', '', $text) .'-'. $key .'-imageapi-text.'. $style->extension;
+  $imagefile = "$cachedir/$imagefilename";
+  return $imagefile;
+}
+
+
+/**
+ * implimentation of hook_theme()
+ */
+function imageapi_text_theme() {
+  return array(
+    'imageapi_text' => array(
+      'arguments' => array(
+        'text' => NULL, 
+        'style' => NULL, 
+        'attributes' => NULL, 
+        'threestate' => TRUE, 
+      )
+    ),
+    'imageapi_text_embedded' => array(
+      'arguments' => array(
+        'text' => NULL, 
+        'style' => NULL, 
+        'attributes' => NULL, 
+        'imgsrc' => NULL,
+      ) 
+    ),
+  );
+}
+
+/**
+ * Turn text into an image.
+ * 
+ * This will return HTML formatted according to the chosen render style (css,
+ * inline etc)
+ *
+ * @param $text
+ *   The text to display
+ * @param $style
+ *   The signwriter profile to use. Can be one of:
+ *     - a profile id
+ *     - a profile name
+ *     - a profile object with at least the name or id set
+ *
+ * @return
+ *   HTML text to replace the input text.
+ * 
+ * @ingroup themeable
+ */
+function theme_imageapi_text($text, $style, $attributes = NULL, $threestate = TRUE) {
+  // Check that images are to be used on this page.
+  if (!_imageapi_text_display_on_page()) {
+    return $text;
+  }
+  if (is_string($style)) {
+    $style = imageapi_text_style_load($style);
+  }
+
+  // $style should be an object, but forgive it if an array is passed by mistake.
+  if (is_array($style)) {
+    $style = (object)$style;
+  }
+
+  if (empty($style)) {
+    dpm(debug_backtrace());
+    return $text;
+  }
+
+  if (! imageapi_text_check_unicode($text, $style)) {
+    return $text;
+  }
+
+  drupal_add_css(drupal_get_path('module', 'imageapi_text') .'/imageapi_text.css');
+
+  imageapi_text_check_mime_type($style);
+
+  // Prepare the image.
+  $text = _signwriter_strip_tags($text);
+  $imgsrc = imageapi_text_get_cached_image_filepath($text, $style);
+  
+  if (! $imgsrc) {
+    // Something went wrong when making the image, check the logs.
+    return $text;
+  }
+
+  if (!empty($style->threestate)) {
+    $attributes['class'] = $attributes['class'] ? $attributes['class'] . ' signwriter signwriter-hover' : 'signwriter signwriter-hover';
+  }
+  else {
+    $attributes['class'] = $attributes['class'] ? $attributes['class'] . ' signwriter' : 'signwriter';
+  }
+
+  // Render HTML by handing off to different rendering methods
+  if (empty($replacement_method)) {
+    $replacement_method = variable_get('imageapi_text_replacement_method', 'embedded');
+  }
+
+  switch ($replacement_method) {
+    case 'embedded' :
+      $output = theme('imageapi_text_embedded', $text, $style, $imgsrc, $attributes) ;
+    break;
+    default :
+      drupal_set_message('unsupported replacement method '. $replacement_method, 'error');
+      return $text;
+  }
+
+  return $output;
+}
+
+/**
+ * Render an image as an img 
+ * 
+ * Set an alt, but do no other funny business. Just a vanilla image.
+ * 
+ * @ingroup  themeable
+ */
+function theme_imageapi_text_embedded($text, $style, $imgsrc, $attributes = array()) {
+  $output = $text;
+  $alttext = htmlspecialchars($text, ENT_QUOTES);
+  if (!empty($imgsrc)) {
+    $output = theme('image', $imgsrc, $alttext, NULL, $attributes);
+  }
+  return $output;
+}
+
+/**
+ * If a string contains odd characters, check against the font settings to see
+ * if they are allowed through
+ * 
+ * Taken from signwriter, adjusted to be per-font not per profile
+ * Needs testing.
+ * 
+ * Just returns TRUE or FALSE
+ */
+function imageapi_text_check_unicode($text, $style) {
+  $unicode_rest = array();
+  $alttext = '"'. decode_entities($text);
+  $font_characters = variable_get('imageapi_text_font_characters', '');
+  if (! isset($font_characters[$style->fontfile])) {
+    watchdog('imageapi_text', 'No unicode entry on record for font %fontfile. Please visit imageapi_text settings and save at least once to register the existence of the font so we don\'t get warnings', array('%fontfile' => $style->fontfile), WATCHDOG_WARNING);
+  }
+  $allowed_nonasciichars = @$font_characters[$style->fontfile];
+  
+  preg_match_all('/[^[:print:]'. $allowed_nonasciichars .']/u', $alttext, $unicode_rest);
+  if (mb_detect_encoding($alttext) === 'UTF-8' && $allowed_nonasciichars !== 'all' && !empty($unicode_rest[0])) {
+    if (variable_get('signwriter_specialcharnotice', TRUE) && user_access('administer signwriter')) {
+      unset($style->width);
+      unset($style->maxwidth);
+      foreach ($unicode_rest[0] as $num => $character) {
+        $alttext = t($character .'rendered with profile '. $style->name);
+        $unicode_rest[0][$num] = $character .' ('. theme( 'image', signwriter_image($character, $style), $alttext, $alttext, array('style' => 'vertical-align:middle')) .')';
+      }
+      drupal_set_message(t("Signwriter notice: The unicode string '$text' will not be replaced by an
+        image because it contains following special characters = ". implode(',', $unicode_rest[0])
+      .'. If your font indeed does include these glyphs, paste them into the <em>allowed characters</em>field on the
+        !profilesettings.', array('!profilesettings' => l("profile's setting page", 'admin/settings/signwriter/profile/'. $style->id))));
+    }
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
+ * Ensures the mime and suffix of the desired file is configured. 
+ * 
+ * File format is not a natural property of the "text" style, and may be set by
+ * context when being called from elsewhere.
+ * 
+ * Updates the $style by reference
+ */
+function imageapi_text_check_mime_type(&$style) {
+  if (empty($style->mime_type)) {
+    $style->mime_type = variable_get('imageapi_text_default_mime_type', 'image/png');
+  }
+  $mime_suffixes = array(
+   'image/png' => 'png',
+   'image/gif' => 'gif',
+   'image/jpeg' => 'jpg',
+  );
+  $style->extension = $mime_suffixes[$style->mime_type];
+}
+
+/**
+ * Work out whether or not to use signwriter on the given page
+ * 
+ * Taken from signwriter 6-2
+ * 
+ * TODO
+ */
+function _imageapi_text_display_on_page() {
+  $type = variable_get('signwriter_pages_type', 0);
+  $list = variable_get('signwriter_pages_list', '');
+
+  // Match path if necessary
+  if ($list) {
+    if ($type < 2) {
+      $path = drupal_get_path_alias($_GET['q']);
+      // Compare with the internal and path alias (if any).
+      $page_match = drupal_match_path($path, $list);
+      if ($path != $_GET['q']) {
+        $page_match = $page_match || drupal_match_path($_GET['q'], $list);
+      }
+      // When $type has a value of 0, the signwriter is used on
+      // all pages except those listed in $list. When set to 1, it
+      // is used only on those pages listed in $list.
+      $page_match = !($type xor $page_match);
+    }
+    else {
+      $page_match = drupal_eval($list);
+    }
+  }
+  else {
+    $page_match = TRUE;
+  }
+  return $page_match;
+}
+
+/**
+ * Create a picture of text with the requested style.
+ * 
+ * Stub that delegates to the toolkit
+ * 
+ * Note that although this function takes an 'image' object as a handle
+ * argument like other imageapi pipeline processes, anything in it is totally
+ * discarded and replaced with the requested picture of text.
+ * 
+ * We use a $style string to define the formatting simply for compatibility.
+ * It's a gold standard syntax, and although it's a little harder to parse and
+ * validate, it is portable!
+ * 
+ * @param $fontpath 
+ *   Path to the TTF font file
+ * @param $style
+ *   CSS-like string containing lots of layout instructions
+ * 
+ * @ingroup imageapi
+ * @see imageapi_gd_image_create_text()
+ */
+function imageapi_image_create_text(&$image, $text, $text_style) {
+  $style = $text_style->style;
+  
+  // This func can be called with no base image
+  // Although that is unexpected in the imagecache pipeline, I'll allow it
+  // so we can support direct invocation.
+  if (empty($image)) {
+    imageapi_text_check_mime_type($style);
+    $image = new stdClass();
+    $image->info = array(
+      'mime_type' => $style->mime_type,
+      'extension' => $style->extension,
+      'source' => '',
+    );
+    $image->toolkit = imageapi_default_toolkit();
+  }
+
+  // Check the input is sane
+  if (empty($text)) {
+    // Still need to return a null image for other processing to not have to think too hard
+    $image->resource = imagecreatetruecolor(1, 1);
+    $image->info['width'] = 0;
+    $image->info['height'] = 0; 
+    return TRUE;
+  }
+  
+  if (empty($text_style->fontfile)) {
+    $text_style->fontfile = variable_get('imageapi_text_default_font', '');
+  }
+  
+  if (! is_readable($text_style->fontfile)) {
+    drupal_set_message(t("imageapi_image_create_text Failed to access the requested font %fontfile. Cannot overlay text onto image.", array('%fontfile' => $text_style->fontfile)));
+    return FALSE;
+  }
+
+  if (is_string($style)) {
+    $style = imageapi_text_parse_style($style);
+  }
+
+  if (! empty($style['stroke-width']) && empty($style['stroke'])) {
+    // note it's just 'stroke' not stroke-color.
+    $style['stroke'] = '#333333';
+  }
+  if (! empty($style['stroke']) && empty($style['stroke-width'])) {
+    // assume we want something to show up
+    $style['stroke-width'] = '1px';
+  }
+  if (empty($style['opacity'])) {
+    $style['opacity'] = 1;
+  }
+  
+  if (isset($style['text-transform'])) {
+    switch ($style['text-transform']) {
+      case 'uppercase' :
+        $text = strtoupper($text) ; 
+        break;
+      case 'lowercase' :
+        $text = strtolower($text) ; 
+        break;
+      case 'capitalize' :
+        $text = ucwords($text) ; 
+        break;
+    }
+  }
+  // NO HTML
+  $text = strip_tags($text);
+
+  // Custom text-effects can take over about now.
+  if (isset($style['text-effect'])) {
+    $effect_name = preg_replace('/[^a-z0-9]+/', '_', strtolower($style['text-effect']));
+    module_load_include('inc', 'imageapi_text', 'effects/'. $effect_name);
+    $funcname = 'imageapi_text_'. $effect_name;
+    if (function_exists($funcname)) {
+      return $funcname($image, $text, $text_style->fontfile, $style);
+    }
+    else {
+      drupal_set_message("The text-effect {$style['text-effect']} [$funcname()] is not available;", 'error');
+      drupal_set_message('./'. drupal_get_path('module', 'imageapi_text') ."/effects/{$effect_name}.inc was unavailable?" ) ;
+    }
+  }
+  $text_style->style = $style;  
+
+  // Otherwise - here is where the job is invoked:
+  return imageapi_toolkit_invoke('create_text', $image, array($text, $text_style));
+}
+
+
+/**
+ * Creates a transparent image containing the given text.
+ * 
+ * The bounding box should be accurate, so this images dimensions can then be
+ * used to position onto another layer correctly.
+ * 
+ * Positioning (top,left etc) is NOT supported here. do it yourself when
+ * placing later. Text is created in a tight
+ * bounding box, 
+ * Use padding-left, padding-top to create a larger image with transparent room
+ * on the sides.
+ * 
+ * Some of the functions here have been broken out into smaller steps to reduce
+ * the large function into stages.
+ * 
+ * stroke and shadow required a large amount of code of their own, word-wrap
+ * required text lines to be rendered individually, line- height required text
+ * blocks to be rendered in one function, rotation and padding required the
+ * text-block to be rendered and measured first...
+ * 
+ * @param 
+ *    $image this input is unused. Result is placed
+ * in it, replacing anything previously there.
+ * @param 
+ *    $text The text string.
+ * @param 
+ *    $fontfile System-absolute path to the TTF font.
+ * @param 
+ *    $style an array or string defining a set of SVG-like style parameters,
+ *    as described in the form help.
+ * 
+ * @return 
+ *    an image api object containing the actual drawn text.
+ * 
+ * @ingroup imageapi_gd
+ * @see imageapi_image_create_text()
+ */
+function imageapi_gd_image_create_text($image, $text, $text_style) {
+  $style = $text_style->style;
+
+  // $textimage is a placeholder, imageapi-style, for the base image resource.
+  // it is modified by reference as the drawing happens.
+  $textimage = (object)array();
+  
+  // This just stops the other image funcs getting confused
+  // I would have expected they had expressed a preference in the $image handle passed in.
+  if (! isset($textimage->info['mime_type'])) {
+    $textimage->info['mime_type'] = 'image/png'; 
+    $textimage->info['extension'] = 'png'; 
+  }
+  
+  if (is_string($style)) {
+    $style = imageapi_text_parse_style($style);
+    watchdog('imageapi_text', __FUNCTION__ . "('$text') Called with a string and not an object. This should not be happening if using the toolkit layer correctly", array(), WATCHDOG_NOTICE);
+  }
+
+  // It is much too hard to do all the calcs while including rotations.
+  // Rotating then shadowing would probably produce the wrong result anyway.
+  // Instead, draw the text and effects horizontally as an image block block, THEN rotate
+  // the image. This will produce a correctly clipped canvas!
+
+  // Make a canvas big enough to include text and borders.
+  // Do NOT do rotation or padding yet. Add it after. 
+  
+  imageapi_gd_image_create_text_block($textimage, $text, $text_style);
+
+  // FYI
+  // Rotation AND text-wrap AND fixed-width do not play well together,
+  // as rotation changes the neccessary width needed to display text.
+  // There is no quick fix.
+
+  ///////////////////////////
+  // Only now do the rotation
+  if (!@empty($style['rotate'])) {
+    imageapi_gd_image_rotate($textimage, $style['rotate'], NULL);
+    /*
+    $rotated = imagerotate($textimage->resource, @$style['rotate'], -1); // with trans
+    $textimage->resource = $rotated;
+    $textimage->info['width'] = imagesx($textimage->resource);
+    $textimage->info['height'] = imagesy($textimage->resource); 
+    // It seems gd is not perfect with transparency in rotation
+    // sometimes get fuzz.
+    */
+  }
+  
+  
+
+
+  ///////////////////////////
+  // Now do some padding (not positioning)
+  // Had to wait until after the rotation.
+  // Positioning is best done by making a new transparent image and placing it
+
+  if (@$style['padding-left'] || @$style['padding-right'] || @$style['padding-top'] || @$style['padding-bottom'] ) {
+    // Get the new rotated dimensions
+    // add any space needed for positioning
+    $bboxsize = array(
+      'width' => imagesx($textimage->resource) + @$style['padding-left'] + @$style['padding-right'],
+      'height' => imagesy($textimage->resource) + @$style['padding-top'] + @$style['padding-bottom'],
+    );
+    $new_canvas = new_transparent_gd_image($bboxsize['width'], $bboxsize['height']);
+    // If both left and right are set, they will compete
+    if (isset($style['padding-left'])) {
+      $offset['x'] = $style['padding-left'];
+    }
+    if (isset($style['padding-right'])) {
+      $offset['x'] = $bboxsize['width'] - $style['padding-right'] - imagesx($textimage->resource);
+    }
+    if (isset($style['padding-top'])) {
+      $offset['y'] = $style['padding-top'];
+    }
+    if (isset($style['padding-bottom'])) {
+      $offset['y'] = $bboxsize['height'] - $style['padding-bottom'] - imagesy($textimage->resource);
+    }
+    // Now I know where to place the text on the new canvas
+    imagecopy($new_canvas, $textimage->resource, $offset['x'], $offset['y'] , 0, 0, imagesx($textimage->resource), imagesy($textimage->resource) );
+    imagedestroy($textimage->resource);
+    $textimage->resource = $new_canvas;
+    $textimage->info['width'] = imagesx($textimage->resource);
+    $textimage->info['height'] = imagesy($textimage->resource); 
+  }
+
+
+  ///////////////////////////
+  // Paint the background last, now we know the size of the rotated
+  // and padded layer
+
+  // If the style sets dimensions, respect them instead
+  if (! empty($style['width'])) {
+    $textimage->info['width'] = $style['width'];
+  }
+  if (! empty($style['height'])) {
+    $textimage->info['height'] = $style['height'];
+  }
+  
+  // If height or width are set from the style, 
+  // this also counts as setting a background (transparent)
+  // Either way, 
+  // make a new canvas of the correct size,
+  // and lay the current textimage on top of it.
+  if (! empty($style['background-color']) || !empty($style['width']) || !empty($style['height'])) {
+    $new_canvas = new_transparent_gd_image($textimage->info['width'], $textimage->info['height']);
+    if (! empty($style['background-color'])) {
+      $RGB = imageapi_text_hex2rgba($style['background-color']);
+      $background = imagecolorallocatealpha($new_canvas, $RGB['red'], $RGB['green'], $RGB['blue'], @$RGB['alpha']);
+      imagefilledrectangle($new_canvas, 0, 0, imagesx($new_canvas), imagesy($new_canvas), $background);
+    }
+    imagecopy($new_canvas, $textimage->resource, 0, 0, 0, 0, imagesx($textimage->resource), imagesy($textimage->resource) );
+    imagedestroy($textimage->resource);
+    $textimage->resource = $new_canvas;
+    $textimage->info['width'] = imagesx($textimage->resource);
+    $textimage->info['height'] = imagesy($textimage->resource); 
+  }
+  
+  ///////////////////////////
+  // Done
+  // Put it into an imageapi data object handle and return
+  // Note this is overwriting or merging with whatever the previous handle had.
+  $image->resource = $textimage->resource;
+  $image->info['width'] = imagesx($textimage->resource);
+  $image->info['height'] = imagesy($textimage->resource); 
+  if (! isset($image->info['mime_type'])) {
+    $image->info['mime_type'] = 'image/png'; 
+    $image->info['extension'] = 'png'; 
+    // This just stops the other image funcs getting confused
+    // I would have expected they had expressed a preference in the $image handle passed in.
+  }
+
+  if ($image->resource && $image->info['width'] && $image->info['height']) {
+    return TRUE;
+  }
+  else {
+    return FALSE; // don;t know what failed, but something did
+  }
+}
+
+/**
+ * Build an image of several lines of text, using shadow, stroke AND LINE-
+ * HEIGHT and TEXT-ALIGN, but not doing padding or rotation.
+ * 
+ * It does not do rotation or padding. Nor height and width, although width IS
+ * used to calculate word-wrap.
+ * 
+ * Although this behaves mostly like an imageapi process callback, it discards
+ * any 'image' object passed in and overwrites it with a new, transparent,
+ * picture of multiline text.
+ * 
+ * Returns an image resource object by reference.
+ */
+function imageapi_gd_image_create_text_block($image, $text, $text_style) {
+  $style = $text_style->style;
+  $fontfile = $text_style->fontfile;
+  
+  // Ensure text is wrapped - if required. 
+  // Newlines in the input text also trigger wrapping (alignment) is needed.
+  if ( (@$style['white-space'] == 'normal' && (!empty($style['width'])) )
+    || preg_match('/\n/', $text)
+  ) {
+    $text_lines = imageapi_text_wrap_text($text, @$style['width'], $fontfile, $style['font-size']);
+    #$text = implode("\n", $text_lines);
+  }
+  else {
+    $text_lines = array($text);
+  }
+  
+  $text_image_lines = array();
+  $total_height = 0;
+  $max_width = @$style['width']; // This only gets used if width was set earlier, otherwise we get tight wrapping.
+  $max_line_height = 0; // used if line-height was not set;
+  foreach ($text_lines as $text_line) {
+    $text_image = (object) array();
+    imageapi_gd_image_create_text_line($text_image, $text_line, $text_style);
+    $text_image_lines[] = $text_image;
+    $total_height += $text_image->info['height'];
+    $max_line_height = max($max_line_height, $text_image->info['height']);
+    $max_width = max($max_width, $text_image->info['width']);
+  }
+  // This will have returned a small collection of text image bricks
+  // that now need to be piled on top of each other.
+  
+  // Forget the calculated height, it produces uneven results.
+  // Use a consistent one.
+  $line_height = isset($style['line-height']) ? $style['line-height'] : $max_line_height;
+  $total_height = $line_height * count($text_image_lines);
+
+  // Glue the lines together into one image, using alignment settings
+  $text_block = new_transparent_gd_image($max_width, $total_height);
+  $y = 0;
+  foreach ($text_image_lines as $text_image_line) {
+    // Align this line in the available canvas
+    if (! isset($style['text-align'])) $style['text-align'] = 'left';
+    switch ($style['text-align']) {
+      case 'center' :
+        $x = ($max_width - $text_image_line->info['width']) / 2;
+        break;
+      case 'right' :
+        $x = ($max_width - $text_image_line->info['width']);
+        break;
+      case 'left' :
+      case 'default' :
+        $x = 0;
+        break;
+    }
+    imagecopy($text_block, $text_image_line->resource, $x, $y, 0, 0, imagesx($text_image_line->resource), imagesy($text_image_line->resource) );
+    #$y += $text_image_line->info['height'];
+    $y += $line_height;
+    // Done with this brick now
+    imagedestroy($text_image_line->resource);
+  }
+  $image->resource = $text_block;
+  $image->info['width'] = imagesx($text_block);
+  $image->info['height'] = imagesy($text_block); 
+}
+
+/**
+ * Render a single line of text, with SOME of the effects, COLOR, OPACITY,
+ * STROKE and SHADOW.
+ * 
+ * It does not do rotation or padding or multilines. Nor height and width,
+ * @see imageapi_image_create_text for that.
+ * 
+ * Produces a transparent picture of text, with a tight bounding box (by
+ * reference)
+ */
+function imageapi_gd_image_create_text_line(&$image, $text, $text_style) {
+  $style = $text_style->style;
+  $fontfile = $text_style->fontfile;
+
+  // Calc the required size and baseline position. A little tedious
+  $box = imagettfbbox($style['font-size'], 0, $fontfile, $text);
+  // gd seems to get it a little wrong in the widths sometimes - but only with some fonts.
+  // No fix seems apparent, text is a little further left than it should be
+
+  $bbox = array(
+    'left' => min($box[0], $box[2], $box[4], $box[6]), 
+    'right' => max($box[0], $box[2], $box[4], $box[6]), 
+    'top' => max($box[1], $box[3], $box[5], $box[7]), 
+    'bottom' => min($box[1], $box[3], $box[5], $box[7]), 
+  );
+
+  // Calc max size taking into account all the extras
+  $paddings = array();
+
+  // max() on undefined does not assume 0, so set it.
+  if (empty($style['stroke-width'])) { $style['stroke-width'] = 0; }
+
+  // @ because undefined values=0 are fine with me
+  $paddings['top']    = 0 + @max($style['stroke-width'], ($style['text-shadow-blur'] + (-1 * $style['text-shadow-y'])) );
+  $paddings['bottom'] = 0 + @max($style['stroke-width'], ($style['text-shadow-blur'] + ($style['text-shadow-y'])) );
+  $paddings['left']   = 0 + @max($style['stroke-width'], ($style['text-shadow-blur'] + (-1 * $style['text-shadow-x'])) );
+  $paddings['right']  = 0 + @max($style['stroke-width'], ($style['text-shadow-blur'] + ($style['text-shadow-x'])) );
+
+  // Sometimes the font renderer is a little unpredictable.
+  // Give ourselves an extra pixel for rounding errors
+  $bboxsize = array(
+    'width' => $bbox['right'] - $bbox['left'] + $paddings['left'] + $paddings['right'] +2,
+    'height' => $bbox['top'] - $bbox['bottom']  + $paddings['top'] + $paddings['bottom'] +2,
+  );
+  // Offset is the position of the baseline of the test - allows for weird fonts  
+
+  // If imagettfbbox had a positive number as the left side, step back that amount
+  // to ensure left alignment when the actual text is drawn.
+  $offset = array(
+    'x' => -$bbox['left'] + $paddings['left'] ,
+    'y' => -$bbox['bottom'] + $paddings['top'] -1,
+  );
+
+  $x = $offset['x'];
+  $y = $offset['y'];
+
+  // Internally, 
+  // opacity is 0-1 : transparent-solid
+  // Using GD, 
+  // alpha is 1-127 : solid-transparent
+  // $alpha = 127 - (127 * $opacity);
+
+  // Start making the image
+  $resource = new_transparent_gd_image($bboxsize['width'], $bboxsize['height']); 
+
+  // For debug, draw a box to see where our pixel calculations went
+  if (! empty($style['border'])) {
+    $border_color = imagecolorallocate($resource, 100, 100, 100, 0);
+    imagerectangle($resource , 0 , 0 , $bboxsize['width']-1 , $bboxsize['height']-1 , $border_color );
+  }
+  
+  //////////////////////////////////
+  // If dropshadowing, add it first;
+  if (! empty($style['text-shadow'])) {
+    $RGB = imageapi_text_hex2rgba($style['text-shadow-color']);
+
+    # Multiply the opacities to find the alpha
+    $opacity = (isset($style['text-shadow-opacity']) ? $style['text-shadow-opacity'] : 1) * $style['opacity'] * (1 - ($RGB['alpha'] / 127)) ;
+    $RGB['alpha'] = 127 - (127 * ($opacity));
+    #$RGB['alpha'] = 127 - (127 * ( isset($style['text-shadow-opacity']) ? $style['text-shadow-opacity'] : $style['opacity']));
+
+    $color = imagecolorallocatealpha($resource, $RGB['red'], $RGB['green'], $RGB['blue'], $RGB['alpha']);
+    imagettftext($resource, $style['font-size'], 0, $x + @$style['text-shadow-x'], $y + @$style['text-shadow-y'], $color, $fontfile, $text); 
+  }
+
+  //////////////////////////////////////
+  // If bordering (stroke) add them next
+  if (! empty($style['stroke-width'])) {
+    // note it's just 'stroke' not stroke-color.
+    if (empty($style['stroke'])) {
+      $style['stroke'] = '#333333';
+    }
+    $RGB = imageapi_text_hex2rgba($style['stroke']);
+
+    # Multiply the opacities to find the alpha
+    $opacity = (isset($style['stroke-opacity']) ? $style['stroke-opacity'] : 1) * $style['opacity'] * (1 - ($RGB['alpha'] / 127)) ;
+
+    # May need To deal with stroke tranparency - which becomes blur withmultiple redraws,
+    # 
+    # Due to multiple redraws, hugely reduce the opacity of any one layer
+    # This formula is pretty rough, YMMV
+    $opacity = pow($opacity, $style['stroke-width']);
+
+    $RGB['alpha'] = 127 - (127 * ($opacity));
+    $color = imagecolorallocatealpha($resource, $RGB['red'], $RGB['green'], $RGB['blue'], $RGB['alpha']);
+    
+    // Write a copy of the text - in all directions - including diagonals - and all pixels in between.
+    // This method is scale-safe. You can add thick borders to thin text.
+    // It scales exponentially however. radius 5 =~ 13 redraws!
+
+    for ($xrad = 0 ; $xrad <= $style['stroke-width']; $xrad ++ ) {
+      for ($yrad = 0 ; $yrad <= $style['stroke-width']; $yrad ++ ) {
+        // Attempt to ROUND the corners a little (using pythagoras). This check will avoid the worst of the blocky corners
+        if ( ($xrad + $yrad > 0) &&  (pow($xrad, 2) + pow($yrad, 2)) <= pow($style['stroke-width'], 2)) {
+          foreach (array(1, -1) as $xdir) {
+            foreach (array(1, -1) as $ydir) {
+              imagettftext($resource, $style['font-size'], 0, $x + ($xdir * $xrad), $y + ($ydir * $yrad), $color, $fontfile, $text); 
+            }
+          }
+        }
+      }
+    }
+    
+  }
+  
+  ////////////////////////
+  // Finally add the main text.
+  $RGB = imageapi_text_hex2rgba($style['fill']);
+
+  // alpha value may come from 3 settings
+  // opacity, fill-opacity and the color alpha
+  // Multiply them all together to get a result
+  // All values are between 0 and 1, so 0.66 x 0.9 = 0.6
+  $opacity = (isset($style['fill-opacity']) ? $style['fill-opacity'] : 1) * $style['opacity'] * (1 - ($RGB['alpha'] / 127)) ;
+  $RGB['alpha'] = 127 - (127 * ($opacity));
+  #  $RGB['alpha'] = 127 - (127 * ( isset($style['fill-opacity']) ? $style['fill-opacity'] : $style['opacity']));
+
+  $color = imagecolorallocatealpha($resource, $RGB['red'], $RGB['green'], $RGB['blue'], $RGB['alpha']);
+  $bounds = imagettftext($resource, $style['font-size'], 0, $x, $y, $color, $fontfile, $text);
+  if (empty($bounds)) { 
+    return FALSE; 
+  }
+
+  // Create the image resource object that will be returned by reference
+  $image->resource = $resource;
+  $image->info['width'] = imagesx($resource);
+  $image->info['height'] = imagesy($resource); 
+}  
+
+/**
+ * STUB - currently unimplemented
+ * 
+ * @ingroup imageapi_imagemagick
+ */
+function imageapi_imagemagick_image_create_text($image, $text, $text_style) {
+  drupal_set_message("imageapi_imagemagick_image_create_text is not yet supported. Code solutions are welcome.", 'error');
+  return FALSE;
+}
+
+
+/**
+ * Given a text, its fontface, size and desired width, break it apart in lines
+ * that fit this width.
+ * Code taken from: http://kore-nordmann.de/blog/image_creation_with_php_texts.
+ * html
+ * 
+ * This may also be called without a width if the input text was found to have
+ * newlines in and thus needs wrapping. GD default text will go to new lines,
+ * but will not support line-height ot text-align, so we still use this function
+ * for multilines.
+ *
+ * @param $text the text that should be wrapped
+ * @param $size the size in pixels (GD) or points (GD2) of the text
+ * @param $width the width of the text in pixels
+ * @param $fontfile the name of the TTF file containing the fontface
+ * 
+ * @return an Array of lines.
+ *  Use the 'implode' function to construct the lines
+ * again.
+ */
+function imageapi_text_wrap_text($text = 'Hello World!', $width = NULL, $fontfile = 'MgOpenModernaBold', $size = 18) {
+  $lines = array( array() );
+
+  // Padding around newlines with whitespace makes 
+  // hard returns work as well as word-wrap
+  $text = preg_replace( '/\n/', " \n ", $text ); 
+  // You cannot use white-space for layout.
+
+  #$tokens = preg_split( '/\s+/', $text ); 
+  $tokens = preg_split( '/[\t ]+/', $text ); 
+
+  $line = 0;
+  foreach ($tokens as $nr => $token ) {
+    $selectedLine = $lines[$line];
+    $selectedLine[] = $token;
+
+    if ($token == "\n") {
+      // newline. Increment line counter but don't print anything
+      $lines[++$line] = array();
+      continue;
+    } 
+    else if (trim($token) == "") {
+      // whitespace that I didn't really want, collected due to the 
+      // regexp that uses 'word boundries'
+      // Keep calm and carry on.
+      continue;
+    } 
+    // Not sure why, but "a & b" tokenized to ["a", " &", "b"]
+    $token = trim($token);
+    
+ 
+    $boundings = imagettfbbox($size, 0, $fontfile, implode( ' ', $selectedLine ));
+    $boundingsWidth = $boundings[2] - $boundings[0];
+  
+    // Check if line is too long 
+    if (!empty($width) && $boundingsWidth > $width ) { 
+      if ( count( $selectedLine ) == 1 ) { 
+        // Return false if one single word does not fit into one line 
+        return array("Single","word","doesn't","fit");
+      } 
+      else { 
+        // Put word in next line instead and reduce available height by used space 
+        $lines[++$line][] = $token;  
+      } 
+    } 
+    else if ($token == "\n") {
+      // newline. Increment line counter but don't print anything
+      $lines[++$line] = array();
+      #$line++;
+    } 
+    else if (trim($token) == "") {
+      // whitespace that I didn't really want, collected due to the 
+      // regexp that uses 'word boundries'
+      // Keep calm and carry on.
+    } 
+    else {
+      // Everything is ok - put token in this line 
+      $lines[$line][] = $token; 
+    } 
+  }
+  
+  #return $lines;
+  // Join the tokenized lines back into the short strings.
+  $result = array();
+  foreach ($lines as $line_array) {
+    $result[] = implode(' ', $line_array);
+  }
+  return $result;
+
+}
+
+/**
+ * Returns the current image object directly to the browser, headers included,
+ * then exits.
+ * 
+ * This stub just delegates to the toolkits
+ * 
+ * @see imageapi_gd_image_return()
+ * @ingroup imageapi
+ */
+function imageapi_image_return($image) {
+  return imageapi_toolkit_invoke('return', $image);
+}
+
+/**
+ * Returns the current image object directly to the browser, headers included,
+ * then exits.
+ * 
+ * @see imageapi_image_return()
+ * @ingroup imageapi_gd
+ */
+function imageapi_gd_image_return($image) {
+  // if using GD, we can just pipe out the image, 
+  header('Content-type: '. $image->info['mime_type']);
+  imagepng($image->resource);
+  exit;
+}
+// For imageMagick, we must save it temporarily, pipe that out, and destroy the original
+/*
+function imageapi_imagemagick_image_return($image) {
+TODO
+    header('Content-type: '. $image->info['mime_type']);
+  imagepng($image->res);
+  exit;
+}
+*/
+
+
+/**
+ * Utility function. 
+ * 
+ * @ingroup imageapi_gd
+ * 
+ * @return a gd image resource, of the given size, with the background erased
+ * correctly..
+ */
+function new_transparent_gd_image($width, $height) {
+  $resource = imagecreatetruecolor($width, $height);
+  // Need to mess around to get transparency to exist
+  imagesavealpha($resource, TRUE);
+  // Paint behind with transparency. 'undefined' canvas is dirty.
+  // Set blending to false to fill a background with 'transparent' ink. 
+  // Otherwise the transparent ink would have no effect  >:)
+  imagealphablending($resource, FALSE); 
+  $background = imagecolorallocatealpha($resource, 255, 255, 255, 127);
+  imagefilledrectangle($resource, 0, 0, $width, $height, $background);
+  // Set alpha blending back on so fututre drawing will work anti-aliased
+  imagealphablending($resource, TRUE); 
+  return $resource;
+}
+
+/**
+ * @} End of "defgroup imageapi_text".
+ */

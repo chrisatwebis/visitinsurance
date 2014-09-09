@@ -1,0 +1,113 @@
+/* @group Admin Tabs */
+
+ul.primary {
+  border-collapse: collapse;
+  padding: 0 0 0 10px; /* LTR */
+  white-space: nowrap;
+  list-style: none;
+  margin: 0;
+  height: 40px;
+  line-height: normal;
+  border-bottom: 0px solid #ccc;
+  background: transparent url(../images/tabs/tabs_bg.png) left bottom repeat-x;    /* LTR */
+}
+ul.primary li {
+  display: inline;
+  line-height: 45px;
+}
+ul.primary li a {
+  margin: -2px;
+  padding: 6px 20px 6px 20px;
+  background: #fff url(../images/tabs/tabs-off.png) left top no-repeat; /* LTR */
+  /*border-style: none none none none;*/ /* LTR */
+  border-top: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+  border-left: 1px solid #ccc;
+  text-decoration: none;
+  /*text-transform: lowercase;*/
+  color: #999;
+}
+ul.primary li.active a {
+  background: #fff url(../images/tabs/tabs-on.png) left top no-repeat; /* LTR */
+  border-top: 1.5px solid #ccc;
+  border-right: 1.5px solid #ccc;
+  border-left: 1.5px solid #ccc;
+  border-bottom: 0px solid #E4E4E4;
+  color: #555;
+}
+ul.primary li a:hover {
+  color: #000;
+}
+
+/* @end */
+
+#messages {
+	padding-left: 15px;
+	padding-right: 15px;
+}
+
+.side-mod .item-list h3 {background: none; margin-left: -15px;}
+
+body.style1 .poll .bar .foreground { background-color: #333333; }
+body.style2 .poll .bar .foreground { background-color: #4775B7; }
+body.style3 .poll .bar .foreground { background-color: #333333; }
+body.style4 .poll .bar .foreground { background-color: #F46C00; }
+body.style5 .poll .bar .foreground { background-color: #A02B2B; }
+body.style6 .poll .bar .foreground { background-color: #58842B; }
+body.style7 .poll .bar .foreground { background-color: #4775B7; }
+body.style8 .poll .bar .foreground { background-color: #F46C00; }
+body.style9 .poll .bar .foreground { background-color: #333333; }
+body.style10 .poll .bar .foreground { background-color: #A02B2B; }
+
+input.button {
+	background: none;
+	cursor:pointer;
+	border: none;
+	text-align: center;
+	font-weight: normal;
+}
+
+.center {
+	margin: 0 auto;
+	width: 100%;
+	text-align: center;
+}
+
+#poll-vote input.form-submit {
+	background: transparent; 
+	border: none;
+	cursor:pointer;
+	font-weight: normal;
+	font-size: 105%;
+	padding: 4px 20px 0 20px;
+	margin: 0;
+}
+
+input.form-submit {
+	cursor:pointer;
+	border: none;
+	text-align: center;
+	background-color: #E6E6E6;
+	padding: 5px 8px 5px 8px;
+	border: 1px solid #ccc;
+	margin-top: 10px;
+	/*background: url(../images/main/dark/readon-m.png) 50% 0 repeat-x;*/
+}
+
+tbody {
+  border-top: 0px solid #ccc;
+}
+
+.block-region {
+  padding: 1em;
+  background: transparent;
+  border: 2px dashed #aaa;
+  text-align: center;
+  font-size: 120%;
+}
+
+.pageheading {
+	padding-left: 20px;
+}	
+
+

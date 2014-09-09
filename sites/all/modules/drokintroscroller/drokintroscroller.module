@@ -1,0 +1,164 @@
+<?php
+/**
+ * @package drupal
+ * @subpackage drokintroscroller
+ * @version 6.x-1.0 September 6, 2010
+ * @author RocketTheme http://www.rockettheme.com
+ * @copyright Copyright (C) 2007 - 2010 RocketTheme, LLC
+ * @license http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 only
+ */
+/*====================================
+	dRokIntroScroller Module
+====================================*/
+
+/*
+* Implementation of hook_block()
+*/
+
+function drokintroscroller_block($op = 'list', $delta = 0, $edit = array()) {
+	switch ($op) {
+	
+		case 'list':
+			$blocks[0]['info'] = t('dRokIntroScroller');
+			$blocks[0]['cache'] = BLOCK_NO_CACHE;
+			return $blocks;
+			break;
+		
+		// configure items on block admin page
+		case 'configure':
+		case 'save':
+			break;
+		case 'view':
+
+            $block['subject'] = "";
+			$block['content'] = theme('drokintroscroller');
+			return $block;
+			break;
+	}
+
+}
+
+function drokintroscroller_theme() {
+  return array(
+    'drokintroscroller' => array(
+      'template' => 'drokintroscroller',
+      'arguments' => array('links' => array()),
+    ),
+  );
+}
+
+function drokintroscroller_admin() {
+	
+	$form = array();
+	
+	$form['drokintroscroller_count'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Maximum number of items to retrieve'),
+	    '#default_value' => variable_get('drokintroscroller_count', 10),
+	    '#size' => 4,
+	    '#maxlength' => 4,
+	    //'#description' => t(""),
+	    '#required' => TRUE,
+	 );
+	  
+	 $form['drokintroscroller_category'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Category ID'),
+	    '#size' => 4,
+	    '#maxlength' => 4,
+	    '#default_value' => variable_get('drokintroscroller_category', ''),
+	    //'#description' => t(""),
+	    '#required' => TRUE,
+	 );
+	 
+	 $form['drokintroscroller_preview'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Preview Length'),
+	    '#size' => 4,
+	    '#maxlength' => 4,
+	    '#default_value' => variable_get('drokintroscroller_preview', ''),
+	    //'#description' => t(""),
+	    '#required' => TRUE,
+	 );	 
+
+	 $form['drokintroscroller_showtitle'] = array(
+	    '#type' => 'select',
+	    '#title' => t('Show Title'),
+	    '#options' => array(
+			'1' => 'Yes',
+			'0' => 'No'
+		),
+	    '#default_value' => variable_get('drokintroscroller_showtitle', 0),
+	    //'#description' => t(""),
+	    '#required' => TRUE,
+	  );
+	  
+	 $form['drokintroscroller_linktitle'] = array(
+	    '#type' => 'select',
+	    '#title' => t('Link Title'),
+	    '#options' => array(
+			'1' => 'Yes',
+			'0' => 'No'
+		),
+	    '#default_value' => variable_get('drokintroscroller_linktitle', 0),
+	    //'#description' => t(""),
+	    '#required' => TRUE,
+	  );	
+	  
+	 $form['drokintroscroller_showreadmore'] = array(
+	    '#type' => 'select',
+	    '#title' => t('Show Read more button'),
+	    '#options' => array(
+			'1' => 'Yes',
+			'0' => 'No'
+		),
+	    '#default_value' => variable_get('drokintroscroller_showreadmore', 0),
+	    //'#description' => t(""),
+	    '#required' => TRUE,
+	  );	    
+
+
+	 $form['drokintroscroller_readmoretext'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Read more button label'),
+	    '#size' => 10,
+	    '#maxlength' => 10,
+	    '#default_value' => variable_get('drokintroscroller_readmoretext', 'Read More'),
+	    //'#description' => t(""),
+	    '#required' => TRUE,
+	 );	 
+	  
+	
+	  return system_settings_form($form);
+}
+
+function drokintroscroller_menu() {
+
+	$items = array();
+	
+	$items['admin/rockettheme'] = array(
+		'title' => 'RocketTheme',
+		'description' => 'Manage settings for custom RocketTheme Modules.',
+		'position' => 'right',
+		'weight' => -5,
+		'page callback' => 'system_admin_menu_block_page',
+		'access arguments' => array('administer site configuration'),
+		'file' => 'system.admin.inc',
+		'file path' => drupal_get_path('module', 'system'),
+	
+	);
+	
+	
+	$items['admin/rockettheme/drokintroscroller'] = array(
+	'title' => 'dRokIntroScroller ',
+	'description' => 'Administer settings for dRokIntroScroller',
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('drokintroscroller_admin'),
+	'access arguments' => array('access administration pages'),
+	'type' => MENU_NORMAL_ITEM,
+	);
+	
+	return $items;
+	
+}
+

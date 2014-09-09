@@ -1,0 +1,317 @@
+<html>
+  <head>
+    <title>ImageAPI Text : Syntax reference</title>
+    <link rel="stylesheet" type="text/css" href="docs.css" />
+  </head>
+  <body>
+    <h4>Attributes that are supported as text style definitions for imageapi_text</h4>
+    <dl>
+      <dt>font-size</dt>
+      <dd>
+        eg: <code>font-size: 14px;</code><br/>
+        Must be in pixels and include units. 
+        [default 12px] (<a href="http://www.w3.org/TR/SVG11/text.html#FontPropertiesUsedBySVG">SVG</a> <a href="http://www.w3.org/TR/CSS2/fonts.html#font-size-props">CSS2</a>)
+      </dd>
+      <dt>fill</dt>
+      <dd>
+        eg: <code>fill: #DD3333;</code><br/>
+        The hex color of the body of the text
+        [default #333333]
+        (<a href="http://www.w3.org/TR/SVG11/painting.html#FillProperty">SVG</a>) (equiv to CSS:color)
+        <a href="#color">See color</a>
+      </dd>
+      <dt>fill-opacity</dt>
+      <dd>
+        eg: <code>fill-opacity: 0.7;</code><br/>
+        A decimal between 0.0 and 1.0 
+        [default 1, but modified by "<a href="#opacity">opacity</a>" value and <a href="#opacity">color</a> alpha] 
+      </dd>
+      <dt>line-height</dt>
+      <dd>
+        eg: <code>line-height: 20px;</code><br/>
+        Must be in pixels and include units. 
+        [default auto].
+      </dd>
+
+      <dt>padding-top<a href="#padding">*</a></dt>
+      <dd>
+        eg: <code>padding-top: 10px;</code><br/>
+        Transparent spacing at the top. [default 0]
+      </dd>
+      <dt>padding-bottom<a href="#padding">*</a></dt>
+      <dd>
+        eg: <code>padding-bottom: 10px;</code><br/>
+        Transparent spacing at the bottom. [default 0]
+      </dd>
+      <dt>padding-left<a href="#padding">*</a></dt>
+      <dd>
+        eg: <code>padding-left: 10px;</code><br/>
+        Transparent spacing at the left. [default 0]
+      </dd>
+      <dt>padding-right<a href="#padding">*</a></dt>
+      <dd>
+        eg: <code>padding-right: 10px;</code><br/>
+        Transparent spacing at the right. [default 0]
+      </dd>
+
+      <dt>top<a href="#positioning">*</a></dt>
+      <dd>
+        eg: <code>top: 10px;</code><br/>
+        Offset from the top. [default centered]
+      </dd>
+      <dt>bottom<a href="#positioning">*</a></dt>
+      <dd>
+        eg: <code>bottom: 10px;</code><br/>
+        Offset from the bottom. [default centered]
+      </dd>
+      <dt>left<a href="#positioning">*</a></dt>
+      <dd>
+        eg: <code>right: 10px;</code><br/>
+        Offset from the left. [default centered]
+      </dd>
+      <dt>right<a href="#positioning">*</a></dt>
+      <dd>
+        eg: <code>right: 10px;</code><br/>
+        Offset from the right. [default centered]
+      </dd>
+      <dt>stroke</dt>
+      <dd>
+        eg: <code>stroke: #00FF00;</code><br/>
+        The color of the outline. 
+        [default none] 
+        (<a href="http://www.w3.org/TR/SVG11/painting.html#StrokeProperties">SVG</a>)
+        <a href="#color">See color</a>
+      </dd>
+      <dt>stroke-width</dt>
+      <dd>
+        eg: <code>stroke-width: 2px;</code><br/>
+        Width in pixels of the stroke. 
+        Note that this actually behaves as an outside border, 
+        not a true outline stroke line. 
+        Results may not be nice if larger than a few pixels. 
+        [default none] 
+        (<a href="http://www.w3.org/TR/SVG11/painting.html#StrokeProperties">SVG</a>)
+        See also CSS3 text-outline
+      </dd>
+      <dt>stroke-opacity</dt>
+      <dd>
+        eg: <code>stroke-opacity: 0.7;</code><br/>
+        A decimal between 0.0 and 1.0 
+        [default 1, but modified by "<a href="#opacity">opacity</a>" value and <a href="#opacity">color</a> alpha] 
+      </dd>
+      <dt>text-shadow</dt>
+      <dd>
+        <code>text-shadow: color xpos vpos blur;</code><br/> 
+        eg: <code>text-shadow: #666666 3px 2px 3px;</code><br/>
+        will place a dropshadow 3px right and 2px down from the text. 
+        [default none] (blur not yet supported) 
+        (<a href="http://www.w3.org/TR/CSS2/text.html#propdef-text-shadow">CSS2</a>). 
+        (Offsets of 0 should be able to produce a "glow" effect if blur worked.) 
+        Note that shadow only applies to the text, not the stroke - yet. 
+      </dd>
+      <dt>text-shadow-opacity</dt>
+      <dd>
+        eg: <code>text-shadow-opacity: 0.7;</code><br/>
+        A decimal between 0.0 and 1.0 . <em>no official spec!</em>
+        [default 1, but modified by "opacity" value and color alpha] 
+        <a href="#color">See color</a>
+      </dd>
+      <dt>opacity</dt>
+      <dd>
+        eg: <code>opacity: 0.7;</code><br/>
+        A decimal between 0.0 and 1.0 
+        [default 1] 
+        (<a href="http://www.w3.org/TR/SVG11/masking.html#OpacityProperty">SVG</a>) (fill-opacity, stoke-opacity maybe later)
+        <br/>
+        Elements can modify their own opacity with specific *-opacity 
+        attributes as well as the alpha channel of the color.
+        This overall opacity setting <em>multiplies</em> over any other
+        opacities.
+        <a href="#opacity">See opacity notes</a>
+      </dd>
+      <dt>transform</dt>
+      <dd>
+        eg: <code>transform: rotate(30);</code><br/>
+         - <a href="http://dev.w3.org/csswg/css3-2d-transforms/">Almost unknown (proposal?)</a>, 
+        but I THINK this is how it's supposed to work?
+        <a href="http://www.w3.org/Graphics/SVG/WG/wiki/CSS-Transforms-Review">Units assumed to be degrees</a>, positive values are clockwise.
+      </dd>
+      <dt>text-transform</dt>
+      <dd>
+        eg: <code>text-transform: uppercase;</code><br/>
+          Note this is the <a href="http://www.w3.org/TR/CSS2/text.html#caps-prop">CSS spec</a> [capitalize, uppercase, lowercase].
+          For small-caps you need "font-variant" (unsupported)
+      </dd>
+      <dt>text-effect</dt>
+      <dd>
+        <b>No specification</b>. This is a highly experimental hook to support 
+        custom contributed effects,
+        such as 3d, perspective, gradient or other things.<br/>
+        eg: <code>text-effect: embedded-underline;</code><br/>
+        Text-effects can be placed in the imageapi_text/contrib folder.
+
+      </dd>
+      <dt>text wrapping</dt>
+      <dd>
+        <em>See white-space</em>
+      </dd>
+      <dt>background-color</dt>
+      <dd>
+        eg: <code>background-color: #DDEEEE;</code><br/>
+        The hex color of the background
+        [default transparent]
+        <br/>
+        For best results, use with a defined height and width, as the 
+        background will be placed only against the bounding box or the text.
+        <br/>
+        Background <a href="#opacity">opacity</a> can be defined in the alpha channel of the <a href="#opacity">color</a>.
+      </dd>
+      <dt>width</dt>
+      <dd>
+        eg: <code>width: 200px;</code><br/>
+          Normally the text will be returned with its own bounding box, but you
+          can define the dimensions of the result manually also. Doing so may
+          truncate the result.
+          <br/>Width is <em>required</em> if you want text-wrapping 
+          (white-space:normal) or text-align.
+          <br/>When used in <em>context</em> of other image processes, 
+          percent values may be used to define width and height.
+      </dd>
+      <dt>height</dt>
+      <dd>
+        eg: <code>height: 20px;</code><br/>
+          Normally the text will be returned with its own bounding box, but you
+          can define the dimensions of the result manually also.
+      </dd>
+      <dt id='white-space'>white-space</dt>
+      <dd>
+        eg: <code>white-space: normal;</code><br/>
+        "Normal" means apply word-wrap, although the <em>default</em> is no-wrap.
+        <br/>
+        Supported values: [<b>pre</b>, <b>normal</b>]
+        <em>The default is <b>pre</b></em> - because that's the gd toolkit behavior.
+        <b>pre</b> means that hard newlines in the input text will be respected,
+        but long lines may go off the right side.
+        Word-wrap can only apply if the target image has some width set, 
+        either width=300px or width=100% (if rendering in context of another image).
+        If no width is set, the returned image will be as wide as it feels it needs to be.
+        <br/>width=100% will <em>not</em> mean anything compared to the 
+        HTML context it is put in, only when blending imageapi_text with other 
+        imageapi images.
+        <br/>
+        If white-space is set to 'normal' <em>and</em>em> there is a width set,
+        then the string will be tokenized into 'words' and the test will wrap to 
+        the next line.
+        <br/>
+        Newlines in the input will also be maintained, whatever the whitespace settings.
+      </dd>
+      <dt>text-align</dt>
+      <dd>
+        eg: <code>text-align: center;</code><br/>
+        Supported values: [<b>left</b>, <b>center</b>, <b>right</b>]
+        Default: left.<br/>
+        text-align is <b>only</b> effective when <b>width</b> is also set.
+        If the  text image has no set width, then a compact bounding box 
+        (plus padding) is produced and no text alignment happens.
+
+    </dl>
+    <p>
+      <small><b id="padding">*Padding</b>
+        When using padding, extra transparent space will be given to the 
+        image, so later positioning and alignment will be done relative to that.
+        In stand-alone image generation, this is different to positioning,
+        as positioning is expected to happen relative to a larger context
+        that is not available to the text-image-generation process.
+        <br/><b>padding:a, b, c, d;</b> all-in-one syntax is not supported. 
+      </small>
+    </p>
+    <p>
+      <small><b id="positioning">*Positioning</b>
+        is done relative to the <em>entire bounding box</em> 
+        that will fit the text, as this most often gives the expected 
+        alignment effect in simple cases. 
+        It has no effect in simple text-only generation, which generates an image
+        with a tight bounding box + padding.
+        It may work when being used as part of a process to overlay text on a larger background image.
+        <a href="&amp;path&amp;text_positioning_is_from_bounding_box.jpg">Illustration</a>
+        <em>But</em> this can be inconsistent with decorative text, rotation 
+        or text descenders if trying to put the text in an exact position. 
+      </small>
+    </p>
+    <p>
+      <small><b id="relative-positioning">*Relative Positioning</b>
+        Additional keywords may be supported if the text is being placed in
+        context of a larger image.
+        <pre>
+top:bottom-80px;
+left:center+10%;
+        </pre>
+        is a valid value.
+        <br/>
+        <pre>{textblock_side}:{keyword}[+,-]{value}{unit}
+        where:
+        {textblock_side} = [top, bottom, left, right]
+        {keyword} = [top, bottom, left, right, middle, center]
+        {value} = numeric
+        {unit} = ['px', '%']
+        </pre>
+        <br/>
+        <img src="keyword_positioning.png" /> 
+        <pre>
+center:center;
+        </pre>
+        - (or nothing) will leave the text right in the middle of the available space.
+        <pre>
+top:center;
+        </pre>
+        - will <em>start</em> the text from the centerline.
+        <pre>
+top:center-100;
+        </pre>
+        - will <em>start</em> the text from above the centerline.
+      </small>
+    </p>
+    <p>
+      <small><b id="color">*Color</b>
+        #RRGGBBAA (color with alpha channel) is supported in most 
+        places color can be set. 
+        eg: <code>background-color: #BBCCEE44</code><br/>
+        Alpha transparency range is from 0 (opaque) to 7F (transparent) only, it is not 00-FF.
+        Remember that transparency and opacity are opposites, high alpha == low opacity.
+        <br/>
+        This 4-part hex code appears to be non-standard notation, but imageapi supports it.
+      </small>
+    </p>
+    <p>
+      <small><b id="opacity">*Opacity</b>
+        Color-alpha is <em>combined</em> with any other opacity settings, 
+        producing a more transparent result.
+        eg: <code>background-color: #BBCCEE40;
+        fill-opacity:0.7;
+        opacity:0.7</code><br/>
+        = (0.5 * 0.7 * 0.7) ~= 0.25
+        
+      </small>
+    </p>
+    <p>
+      <small>
+        font-family, font-weight, font-style, text-decoration, 
+        not supported. These are properties of the font file chosen. 
+        We must use full font file path instead.
+      </small>
+    </p>
+    <h4>Operations</h4>
+    <p>
+      Processing happens basically in the order:
+    </p>
+      <ol>
+        <li>Word wrapping, lines are calculated according to <a href="#white-space">white-space</a> rules, font-size, and available width.</li>
+        <li>Draw text, with effects</li>
+        <li>Text is aligned within given space</li>
+        <li>Rotate, based on minimum bounding box</li>
+        <li>Add padding to the new bounding box</li>
+        <li>Underlay background</li>
+      </ol>
+
+  </body>
+</html>

@@ -1,0 +1,96 @@
+<?php
+// $Id: yui.module
+
+/*
+ * Bunyamin AKYILDIZ (bakyildiz)
+ * YUI Common module
+ */
+
+/*
+ * Implementation of hook_help().
+ */
+function yui_help($section) {
+	switch ($section) {
+		case 'admin/settings/modules#description':
+			return t('YUI Common parameters.');
+	}
+}
+
+/**
+ * implementation of hook_perm().
+ */
+function yui_perm() {
+    $array = array('Access YUI');
+      return $array;
+}
+
+/**
+ * implementation of hook_init().
+ */
+function yui_init() {
+  require_once './includes/common.inc';
+  $skin = variable_get('yui_skin', 'yui-skin-sam');
+
+  drupal_add_js("if (Drupal.jsEnabled) { $(document).ready(function() { $('body').addClass('$skin'); } ); };", "inline");
+}
+
+/*
+ * Settings form as implemented by hook_menu
+ */
+function yui_admin_settings() {
+	$form['yui_source'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Location of YUI library'),
+    '#description' => t('Default location is Yahoo Server. <BR>If you install YUI library locally please enter the path as follows: files/lib'),
+    '#default_value' => variable_get('yui_source','http://yui.yahooapis.com/2.3.0'),
+	'#required' => TRUE,
+	);
+	$form['yui_skin'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Skin to use for YUI'),
+    '#description' => t('Skin to use for YUI'),
+    '#default_value' => variable_get('yui_skin','yui-skin-sam'),
+	'#required' => TRUE,
+	);
+	return system_settings_form($form);
+}
+
+function yui_menu() {
+  $items = array();
+    $items['admin/settings/yui'] = array(
+      'title' => t('YUI Common Settings'),
+      'description' => t('YUI Description'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('yui_admin_settings'),
+      'access callback' => 'user_access',
+      'access arguments' => array('administer site configuration'),
+      'type' => MENU_NORMAL_ITEM,
+		);
+	return $items;
+}
+
+function yui_add_js($component = NULL, $yui_source = NULL, $file_and_path = NULL) {
+  static $js_files = array();
+
+  if (! preg_match('/^http:\/\//', $yui_source)) {
+    $yui_source = base_path() . $yui_source;
+  }
+
+  if (! in_array($yui_source . $file_and_path, $js_files)) {
+    drupal_set_html_head('<script type="text/javascript" src="'.$yui_source.$file_and_path.'"></script>');
+    $js_files[] = $yui_source . $file_and_path;
+  }
+}
+
+function yui_add_css($component = NULL, $yui_source = NULL, $file_and_path = NULL) {
+  static $css_files = array();
+
+  if (! preg_match('/^http:\/\//', $yui_source)) {
+    $yui_source = base_path() . $yui_source;
+  }  
+
+  if (! in_array($yui_source . $file_and_path, $css_files)) {
+    drupal_set_html_head('<link rel="stylesheet" type="text/css" href="'.$yui_source.$file_and_path.'"/>');
+    $css_files[] = $yui_source . $file_and_path;
+  }
+}

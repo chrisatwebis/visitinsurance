@@ -1,0 +1,216 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Install, update and uninstall functions for the seochecklist module.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function seochecklist_schema() {
+  $schema['seo_checklist'] = array(
+    'description' => 'seo_checklist',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'description' => 'id',
+      ),
+      'order_id' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'description' => 'order id',
+        'default' => 0,
+      ),
+      'completed' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'UNIX timestamp of when this task was completed, or 0 if the task has not yet been completed.',
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The {user}.uid of the account that completed this task.',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function seochecklist_install() {
+  drupal_install_schema('seochecklist');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function seochecklist_uninstall() {
+  drupal_uninstall_schema('seochecklist');
+  variable_del('seo_checklist_link');
+  variable_del('seo_checklist_thanks');
+  variable_del('seo_checklist_podcast');
+  variable_del('seo_checklist_book_references');
+}
+
+/**
+ * Update from 6.x-1.x to 6.x-2.x.
+ */
+function seochecklist_update_6001() {
+  $ret = array();
+
+  $query = db_query("SELECT linked_seo FROM {seo_checklist} ORDER BY id DESC LIMIT 1");
+  $result = db_fetch_object($query);
+  variable_set('seo_checklist_link', intval($result->linked_seo));
+
+  $query = db_query("SELECT extra2, extra3 FROM {seo_checklist} WHERE id = 1");
+  $result = db_fetch_object($query);
+  variable_set('seo_checklist_thanks', intval($result->extra2));
+  variable_set('seo_checklist_podcast', intval($result->extra3));
+
+  db_drop_field($ret, 'seo_checklist', 'extra2');
+  db_drop_field($ret, 'seo_checklist', 'extra3');
+  db_drop_field($ret, 'seo_checklist', 'linked_seo');
+  db_drop_field($ret, 'seo_group', 'subgroup');
+  db_drop_table($ret, 'seo_subgroup');
+
+  return $ret;
+}
+
+/**
+ * Fix the link in the clean URL task.
+ */
+function seochecklist_update_6202() {
+  $ret = array();
+  $ret[] = update_sql("UPDATE {seo_checklist} SET name = 'Clean URLs - Activate (Usually automatic. Please double-check!)', configure = 'admin/settings/clean-urls' WHERE id = 2");
+  return $ret;
+}
+
+/**
+ * Update from Live to Bing and fix links.
+ */
+function seochecklist_update_6203() {
+  $ret = array();
+  $ret[] = update_sql("UPDATE {seo_checklist} SET name = 'Get a Windows Live ID - You will need this for steps that follow - <a href=\"https://signup.live.com/\">https://signup.live.com/</a>' WHERE id = 44");
+  $ret[] = update_sql("UPDATE {seo_checklist} SET name = 'Login to Bing - <a href=\"http://www.bing.com/webmaster/\">http://www.bing.com/webmaster/</a>', order_id = 17 WHERE id = 42");
+  $ret[] = update_sql("UPDATE {seo_checklist} SET name = 'Authenticate your site with Bing', order_id = 19 WHERE id = 43");
+  $ret[] = update_sql("UPDATE {seo_checklist} SET name = 'Submit your XML Sitemap to Bing - <a href=\"http://www.bing.com/webmaster/WebmasterAddSitesPage.aspx\">http://webmaster.live.com/webmaster/WebmasterAddSitesPage.aspx</a>', order_id = 21 WHERE id = 28");
+  $ret[] = update_sql("UPDATE {seo_checklist} SET module = 'xmlsitemap' WHERE id = 21");
+  return $ret;
+}
+
+/**
+ * Convert the date_changed and option_checked fields into one UNIX completed
+ * field.
+ */
+function seochecklist_update_6204() {
+  $ret = array();
+
+  db_add_field($ret, 'seo_checklist', 'completed', array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'UNIX timestamp of when this task was completed.',
+  ));
+
+  $query = db_query("SELECT id, date_changed FROM {seo_checklist} WHERE option_checked <> 0");
+  while ($record = db_fetch_object($query)) {
+    $record->changed = strtotime($record->date_changed);
+    if (!$record->changed) {
+      $record->changed = time();
+    }
+    $ret[] = update_sql("UPDATE {seo_checklist} SET completed = {$record->changed} WHERE id = {$record->id}");
+  }
+
+  db_drop_field($ret, 'seo_checklist', 'date_changed');
+  db_drop_field($ret, 'seo_checklist', 'option_checked');
+  db_drop_field($ret, 'seo_checklist', 'checked_module');
+
+  return $ret;
+}
+
+/**
+ * Remove the {seo_checklist}.subgroup_id field and add {seo_checklist}.uid.
+ */
+function seochecklist_update_6205() {
+  $ret = array();
+  db_drop_field($ret, 'seo_checklist', 'subgroup_id');
+  db_add_field($ret, 'seo_checklist', 'uid', array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'The {user}.uid of the account that completed this task.',
+  ));
+  $ret[] = update_sql("UPDATE {seo_checklist} SET module = LOWER(module)");
+  return $ret;
+}
+
+/**
+ * Fixed the link to Google Local Business Center.
+ */
+function seochecklist_update_6206() {
+  $ret = array();
+  $ret[] = update_sql("UPDATE {seo_checklist} SET name = 'If appropriate, submit your company to Google Local Business Center - <a href=\"https://www.google.com/local/add/login\">https://www.google.com/local/add/login</a>' WHERE id = 29");
+  return $ret;
+}
+
+function seochecklist_update_6207() {
+  $ret = array();
+  $ret[] = update_sql("UPDATE {seo_group} SET name = 'Social Media' WHERE id = 8");
+  $ret[] = update_sql("INSERT INTO {seo_checklist} (id, group_id, name, module, download, enable, configure, order_id) VALUES (47, 7, 'Site Verification Module', 'site_verify', 'http://drupal.org/project/site_verify', 'admin/build/modules', '', 0)");
+  $ret[] = update_sql("INSERT INTO {seo_group} VALUES (10, 'Geographic', '')");
+  $ret[] = update_sql("INSERT INTO {seo_checklist} (id, group_id, name, module, download, enable, configure, order_id) VALUES (50, 10, 'hCard Module', 'hcard', 'http://drupal.org/project/hcard', 'admin/build/modules', '', 1)");
+  $ret[] = update_sql("INSERT INTO {seo_checklist} (id, group_id, name, module, download, enable, configure, order_id) VALUES (51, 10, 'Use the Meta Tags module to add geo meta tags to your site.', '', '', '', '', 2)");
+  $ret[] = update_sql("INSERT INTO {seo_group} VALUES (11, 'Optional (but helpful)', '')");
+  $ret[] = update_sql("INSERT INTO {seo_checklist} (id, group_id, name, module, download, enable, configure, order_id) VALUES (52, 11, 'Vertical Tabs Module', 'vertical_tabs', 'http://drupal.org/project/vertical_tabs', 'admin/build/modules', '', 1)");
+  $ret[] = update_sql("INSERT INTO {seo_checklist} (id, group_id, name, module, download, enable, configure, order_id) VALUES (53, 11, 'Administration Menu', 'admin_menu', 'http://drupal.org/project/admin_menu', 'admin/build/modules', '', 2)");
+  $ret[] = update_sql("INSERT INTO {seo_group} VALUES (12, 'Performance', '')");
+  $ret[] = update_sql("INSERT INTO {seo_checklist} (id, group_id, name, module, download, enable, configure, order_id) VALUES (54, 12, 'Turn on Drupal\'s built in caching.', '', '', '', 'admin/settings/performance/default', 1)");
+  $ret[] = update_sql("INSERT INTO {seo_checklist} (id, group_id, name, module, download, enable, configure, order_id) VALUES (55, 12, 'Boost Module', 'boost', 'http://drupal.org/project/boost', 'admin/build/modules', 'admin/settings/performance/boost', 2)");
+  $ret[] = update_sql("INSERT INTO {seo_checklist} (id, group_id, name, module, download, enable, configure, order_id) VALUES (56, 12, 'Authcache Module', 'authcache', 'http://drupal.org/project/authcache', 'admin/build/modules', '', 3)");
+  return $ret;
+}
+
+function seochecklist_update_6301() {
+  global $user;
+  $ret = array();
+  db_drop_table($ret, 'seo_group');
+  db_drop_field($ret, 'seo_checklist', 'group_id'); 
+  db_drop_field($ret, 'seo_checklist', 'name'); 
+  db_drop_field($ret, 'seo_checklist', 'module'); 
+  db_drop_field($ret, 'seo_checklist', 'download'); 
+  db_drop_field($ret, 'seo_checklist', 'enable'); 
+  db_drop_field($ret, 'seo_checklist', 'configure'); 
+  db_drop_field($ret, 'seo_checklist', 'order_id'); 
+  if (variable_get('seo_checklist_link', FALSE)) {
+    db_query("INSERT INTO {seo_checklist} (id, completed, uid) VALUES (%d, %d, %d)", 66, time(), $user->uid);
+  }
+  if (variable_get('seo_checklist_thanks', FALSE)) {
+    db_query("INSERT INTO {seo_checklist} (id, completed, uid) VALUES (%d, %d, %d)", 67, time(), $user->uid);
+  }
+  if (variable_get('seo_checklist_podcast', FALSE)) {
+    db_query("INSERT INTO {seo_checklist} (id, completed, uid) VALUES (%d, %d, %d)", 68, time(), $user->uid);
+  }
+  if (variable_get('seo_checklist_book_references', FALSE)) {
+    db_query("INSERT INTO {seo_checklist} (id, completed, uid) VALUES (%d, %d, %d)", 69, time(), $user->uid);
+  }
+  
+  //variable_del('seo_checklist_link');
+  variable_del('seo_checklist_thanks');
+  variable_del('seo_checklist_podcast');
+  //variable_del('seo_checklist_book_references');
+  return $ret;
+}

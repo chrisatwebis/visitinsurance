@@ -1,0 +1,4 @@
+name = dRokNewsFlash
+description = Simple news flash module.
+version = 6.x-1.2
+core = 6.x

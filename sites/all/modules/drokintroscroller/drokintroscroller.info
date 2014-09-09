@@ -1,0 +1,4 @@
+name = dRokIntroScroller
+description = Scrolling Rotator Module
+version = 6.x-1.0
+core = 6.x

@@ -1,0 +1,11 @@
+; $Id$
+name = SEO Checklist
+description = A Search Engine Optimization checklist for Drupal.
+core = 6.x
+recommends[] = vertical_tabs
+; Information added by drupal.org packaging script on 2011-12-29
+version = "6.x-3.x-dev"
+core = "6.x"
+project = "seo_checklist"
+datestamp = "1325118976"
+

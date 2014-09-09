@@ -1,0 +1,132 @@
+<?php
+/**
+ * @package drupal
+ * @subpackage drokheadlines
+ * @version 6.x-1.2 August 12, 2010
+ * @author RocketTheme http://www.rockettheme.com
+ * @copyright Copyright (C) 2007 - 2010 RocketTheme, LLC
+ * @license http://www.gnu.org/licenses/gpl-2.0.html GNU/GPLv2 only
+ */
+/*====================================
+	dRokHeadlines News Module
+====================================*/
+
+/*
+* Implementation of hook_block()
+*/
+
+function drokheadlines_block($op = 'list', $delta = 0, $edit = array()) {
+	switch ($op) {
+	
+		case 'list':
+			$blocks[0]['info'] = t('dRokHeadlines');
+			$blocks[0]['cache'] = BLOCK_NO_CACHE;
+			return $blocks;
+			break;
+		
+		// configure items on block admin page
+		case 'configure':
+		case 'save':
+			break;
+		case 'view':
+		
+            $block['subject'] = variable_get("headlines_label", 'Top Headlines');;
+			$block['content'] = theme('drokheadlines');
+			return $block;
+			break;
+	}
+
+}
+
+function drokheadlines_theme() {
+  return array(
+    'drokheadlines' => array(
+      'template' => 'drokheadlines',
+      'arguments' => array('links' => array()),
+    ),
+  );
+}
+
+
+function drokheadlines_admin() {
+	
+	$sql = "SELECT term_node.*, term_data.* FROM term_node, term_data WHERE  term_node.tid = term_data.tid ORDER BY term_data.name";
+	$result = db_query($sql);
+	
+	$form = array();
+	
+	$form['headlines_rotatorCount'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Maximum number of items to retrieve'),
+	    '#default_value' => variable_get('headlines_rotatorCount', 6),
+	    '#size' => 4,
+	    '#maxlength' => 4,
+	    //'#description' => t(""),
+	    '#required' => TRUE,
+	  );
+	  
+	  $form['headlines_label'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Pretext Label'),
+	    '#default_value' => variable_get('headlines_label', 'Top Headlines:'),
+	    '#size' => 25,
+	    '#maxlength' => 25,
+	    //'#description' => t(""),
+	    '#required' => TRUE,
+	  );
+	  
+	  $form['headlines_category'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Category ID'),
+	    '#size' => 4,
+	    '#maxlength' => 2,
+	    '#default_value' => variable_get('headlines_category', ''),
+	    //'#description' => t(""),
+	    '#required' => TRUE,
+	  );
+	  
+	  
+	  $form['headlines_preview_length'] = array(
+	    '#type' => 'textfield',
+	    '#title' => t('Text Preview Length'),
+	    '#default_value' => variable_get('headlines_preview_length', 100),
+	    '#size' => 6,
+	    '#maxlength' => 6,
+	    '#required' => TRUE,
+	  );
+	  
+
+	
+	  return system_settings_form($form);
+}
+
+function drokheadlines_menu() {
+
+	$items = array();
+	
+	$items['admin/rockettheme'] = array(
+		'title' => 'RocketTheme',
+		'description' => 'Manage settings for custom RocketTheme Modules.',
+		'position' => 'right',
+		'weight' => -5,
+		'page callback' => 'system_admin_menu_block_page',
+		'access arguments' => array('administer site configuration'),
+		'file' => 'system.admin.inc',
+		'file path' => drupal_get_path('module', 'system'),
+	
+	);
+	
+	
+	$items['admin/rockettheme/drokheadlines'] = array(
+	'title' => 'dRokHeadlines ',
+	'description' => 'Administer settings for dRokHeadlines',
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('drokheadlines_admin'),
+	'access arguments' => array('access administration pages'),
+	'type' => MENU_NORMAL_ITEM,
+	);
+	
+	return $items;
+}
+
+

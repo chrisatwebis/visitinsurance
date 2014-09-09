@@ -1,0 +1,232 @@
+/*
+*	User Page start
+*/
+.res_gre_bias_tit {
+    color: #FFFFFF;
+    height: 27px;
+    line-height: 25px !important;
+    margin-left: 0;
+}
+.gre_v_line1 {
+    background: none repeat scroll 0 0 #018101;
+    border-left: 1px solid #017A01;
+    border-right: 1px solid #018501;
+}
+.gre_v_line2 {
+    background: none repeat scroll 0 0 #018B01;
+    border-left: 1px solid #018801;
+    border-right: 2px solid #029002;
+}
+.gre_v_line1, .gre_v_line2 {
+    float: left;
+    height: 100%;
+    width: 1px;
+}
+.res_gre_bias_cor {
+    border-color: #079507 transparent transparent #079507;
+    border-style: solid dotted dotted solid;
+    border-width: 13px 6px;
+    float: left;
+    height: 0;
+    overflow: hidden;
+    width: 0;
+}
+.res_gre_bias_main {
+    -moz-border-bottom-colors: none;
+    -moz-border-image: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background-color: #079507;
+    border-color: #0F9C0F;
+    border-style: solid;
+    border-width: 1px 0;
+    float: left;
+    font-size: 15px;
+    padding: 0 27px 0 18px;
+	color:#fff;
+}
+.custom_profile
+{
+	background: none repeat scroll 0 0 #FBFBFB;
+	background:url("../images/bg-tab-grad.gif") repeat-x scroll 0 0 #F3F3F3;
+    border: 1px solid #eee;
+    padding: 10px 0;
+	color:#000;
+}
+.custom_profile li
+{
+	list-style: none outside none;
+}
+.user_page_info,.user_reservation_record_wrapper,.user_reward_wrapper,.user_gift_wrapper
+{
+/* 	background: url("../images/bg-tab-grad.gif") repeat-x scroll 0 0 #F3F3F3;
+    border: 1px solid #C2E1F7; */
+    overflow: hidden;
+    padding: 15px;
+}
+
+.user_page_info .column
+{
+	width:50%;
+	float:left;
+}
+.user_page_info .views-field span{
+    color: #0079C1;
+	color:#999;
+    float: left;
+    line-height: 22px;
+    width: 130px;
+}
+.user_page_info .views-field .location span
+{
+	width:auto;
+	float:none;
+}
+.user_page_info .views-field span.field-content
+{
+	width:200px;
+	color:#000;
+	
+}
+.user_page_info .views-field span.field-content span
+{
+	color:#000;
+}
+.user_page_info .views-field div.field-content
+{
+	float:left;
+	color:#000;
+	line-height:22px;
+}
+.user_page_info .views-field div.field-content span
+{
+	color:#000;
+}
+.user_page_info .views-field
+{
+	overflow:hidden;
+	width:100%;
+	min-height: 23px;
+    padding: 0 0 6px;
+}
+.user_page_info .avatar .picture img
+{
+	margin: 5px 5px 10px 0;
+    padding: 2px;
+}
+.profile .avatar .picture {
+    float: none;
+}
+.user_page_info_wrapper .res_gre_bias_tit
+{
+	margin-left:0px;
+	margin-top:10px;
+}
+.custom_profile  .res_gre_bias_tit
+{
+	margin-bottom:10px;
+	margin-top:10px;
+}
+.user_page_info_wrapper h3.res_gre_bias_main, .custom_profile h3.res_gre_bias_main
+{
+	-moz-border-bottom-colors: none;
+    -moz-border-image: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background-color: #079507;
+    border-color: #079507;
+    border-style: solid;
+    border-width: 1px 0;
+    float: left;
+    font-size: 15px;
+    padding: 0 27px 0 18px;
+	color:#fff;
+	line-height:25px;
+	font-weight:bold;
+	margin:0px;
+}
+.user_page_info_wrapper .user_reservation_records
+{
+	padding:10px;
+}
+.view-coupon .view-content .views-table .pdf
+{
+	background: url("../images/pdf-icon.gif") no-repeat scroll 0 0 transparent;
+    display: block;
+    height: 40px;
+    overflow: hidden;
+    padding-left: 40px;
+}
+.view-coupon.view-display-id-block_1 .used-status
+{
+	color:#EE3996;
+	font-weight:bold;
+}	
+.view.view-coupon table caption
+{
+	background:#32BEF6;
+	padding:5px;
+	color:#fff;
+	font-size:14px;
+	font-weight:bold;
+}
+ .view-id-coupon .unflag-action
+{
+	background:url("../images/icon-check.png") no-repeat scroll 0 10px transparent;
+	padding-left:20px;
+	display:block;
+	height:25px;
+}
+ .view-id-coupon  .flag-action
+{
+	background:url("../images/icon-delete.png") no-repeat scroll 0 10px transparent;
+	padding-left:20px;
+	display:block;
+	height:25px;
+}
+ .view-id-coupon .flag-message {
+    background: url("../images/black_arrow.png")  no-repeat scroll 0 0 transparent;
+    color: #FFFFFF;
+    height: 70px;
+    padding: 33px 20px 15px;
+    width: 170px;
+    z-index: 1000;
+	font-size:12px;
+	left:-60px;
+	top:0px;
+}
+
+.custom_profile .user-page-list-wrapper ul
+{
+	margin:0px;
+	padding:0px;
+}
+/*
+*	User Page end
+*/
+
+/*
+	The insured block styling start
+**/
+.view-insurance-related .view-content
+{
+	padding:15px;
+}
+.view-insurance-related .view-header{
+	display: block;
+    overflow: hidden;
+    padding: 15px 0 5px 15px;
+}
+.view-insurance-related .view-header .title h3
+{
+	border: 0 none;
+    float: none;
+    margin: 0;
+    padding: 0;
+}
+.view-insurance-related .view-content table
+{
+	width:100%;
+}

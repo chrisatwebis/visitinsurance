@@ -1,0 +1,22 @@
+#imageapi-text-style-edit #edit-style-wrapper {
+  clear:left;
+  width:40%;
+  float:left;
+}
+#imageapi-text-style-edit #edit-font-wrapper {
+  width:40%;
+  float:left;
+}
+
+#imageapi-text-style-edit .font-selection .form-item{
+  overflow:hidden;
+  white-space:nowrap;
+}
+
+#imageapi-text-style-edit #imageapi-text-sample{
+  background-image: url(matte_grid-20x20.png);
+}
+
+.imageapi-text-test .imageapi-text-sample img{
+  background-image: url(matte_grid-20x20.png);
+}

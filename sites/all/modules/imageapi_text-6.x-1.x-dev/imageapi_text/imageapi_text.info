@@ -1,0 +1,14 @@
+name = ImageAPI Text
+description = Text rendering extensions to the imageapi system
+package = ImageCache
+core = 6.x
+
+;dependencies[] = imageapi
+
+
+; Information added by drupal.org packaging script on 2011-02-25
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "imageapi_text"
+datestamp = "1298619412"
+

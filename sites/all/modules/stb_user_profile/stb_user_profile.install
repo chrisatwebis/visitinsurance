@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the stb_user_profile module.
+ */
+
+/*************************************************************************
+* stb_user_profile hooks                                                         *
+*************************************************************************/
+
+/**
+ * Implementation of hook_install().
+ */
+function stb_user_profile_install() {
+  drupal_install_schema('stb_user_profile');
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function stb_user_profile_uninstall() {
+  drupal_uninstall_schema('stb_user_profile');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function stb_user_profile_schema() {
+
+  return $schema;
+}

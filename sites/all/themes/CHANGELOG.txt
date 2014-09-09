@@ -1,0 +1,118 @@
+/**
+* @version		$Id: CHANGELOG.txt 13426 2009-11-04 16:36:00Z ian $
+* @package		Drupal
+* @copyright	Copyright (C) 2005 - 2009 Open Source Matters. All rights reserved.
+* @license		GNU/GPL, see LICENSE.php
+* Drupal is free software. This version may have been modified pursuant
+* to the GNU General Public License, and as distributed it includes or
+* is derivative of works licensed under the GNU General Public License or
+* other free or open source software licenses.
+*/
+
+1. Copyright and disclaimer
+---------------------------
+This application is opensource software released under the GPL.  Please
+see source code and the LICENSE file.
+
+
+2. Changelog
+------------
+
+
+Legend:
+
+* -> Security Fix
+# -> Bug Fix
+$ -> Language fix or change
++ -> Addition
+^ -> Change
+- -> Removed
+! -> Note
+
+
+------- 1.6 Update [20-August-2010] -------
+# fixed bug for missing variable names in drokstories.tpl.php
+
+Changed Files:
+drokstories.tpl.php
+
+
+------- 1.5 Update [12-August-2010] -------
+# added compatibility for mootools library for 3rd party module support in the admin
++ added support for database table prefixes in the RocketLauncher Installation profile
++ added option to change number of menu columns from the Theme Admin
+^ updated drokstories module to support database table prefixes
+^ updated drokstories.tpl.php override to support database table prefixes
+
+
+Changed Files:
+rt_head_includes.php
+rt_mootools.php
+drokstories.tpl.php
+template.php
+theme-settings.php
+
+Changed Modules:
+dRokStories
+
+
+
+------- 1.4 Release [29-June-2010] -------
+^ modified template.php and page.tpl.php to allow 3rd party SEO modules to work properly
+- removed call to unused css file in rt_head_includes.php
+
+Changed Files:
+template.php
+page.tpl.php
+rt_head_includes.php
+
+
+------- 1.3 Release [03-June-2010] -------
+^ modified template.php to allow main nav support for clean URLs
+^ modified droksidemenu.tpl.php to allow sidemenu support for clean URLs
+^ modified drokstories.tpl.php to support clean URLs
++ added maintenance-page.tpl.php
+^ updated template.php to process custom maintenance page variables
+
+Changed Files:
+template.php
+page.tpl.php
+maintenance-page.tpl.php
+css/general.css
+droksidemenu.tpl.php
+drokstories.tpl.php
+
+Changed Modules:
+dRokSideMenu
+dRokNewsFlash
+dRokStories
+dRokLatestNews
+dRokHeadlines
+
+
+
+
+------- 1.2 Release [17-May-2010] -------
+^ updated page.tpl.php to include styling and columns in bottom123 block region
+^ updated block-bottom123.tpl.php to allow class assignments and columns in bottom123 block region
+^ updated general.css to fix display issue when list item uses the h3 tag
+
+Changed Files: 
+page.tpl.php
+block-bottom123.php
+css/general.css
+
+
+
+------- 1.1 Release [13-May-2010] -------
++ added $head_title and $closure tags to page.tpl.php
+^ updated template.php code for changing theme style from Drupal Admin
+
+Changed Files:
+page.tpl.php
+template.php
+
+
+
+------- 1.0 Release [30-April-2010] -------
+! Initial Release

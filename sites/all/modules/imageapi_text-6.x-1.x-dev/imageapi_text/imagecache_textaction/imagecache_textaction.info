@@ -1,0 +1,13 @@
+name = Imagecache Text
+description = Display simple or dynamic captions on images, with formatting and layout.
+dependencies[] = imagecache
+dependencies[] = imageapi_text
+dependencies[] = imagecache_actions
+package = ImageCache
+core = 6.x
+; Information added by drupal.org packaging script on 2011-02-25
+version = "6.x-1.x-dev"
+core = "6.x"
+project = "imageapi_text"
+datestamp = "1298619412"
+

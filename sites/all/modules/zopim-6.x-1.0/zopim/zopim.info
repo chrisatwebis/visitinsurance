@@ -1,0 +1,11 @@
+; $Id: zopim.info,v 1.2 2010/06/09 01:44:59 nicholasalipaz Exp $
+name = "Zopim Chat"
+description = Adds Zopim javascript tracking code to all your site's pages.
+package = Statistics
+
+; Information added by drupal.org packaging script on 2010-06-09
+version = "6.x-1.0"
+core = "6.x"
+project = "zopim"
+datestamp = "1276049410"
+

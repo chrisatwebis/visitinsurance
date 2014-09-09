@@ -1,0 +1,12 @@
+/**
+ * RokNewsFlash Module
+ *
+ * @package		Joomla
+ * @subpackage	RokNewsFlash Module
+ * @copyright Copyright (C) 2009 RocketTheme. All rights reserved.
+ * @license http://www.gnu.org/copyleft/gpl.html GNU/GPL, see RT-LICENSE.php
+ * @author RocketTheme, LLC
+ *
+ */
+
+eval(function(p,a,c,k,e,r){e=function(c){return(c<a?'':e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--)r[e(c)]=k[c]||e(c);k=[function(e){return r[e]}];e=function(){return'\\w+'};c=1};while(c--)if(k[c])p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c]);return p}('g V=h W({X:\'1.2 - Y 1.2.3\',Z:[10,11],j:{w:K,L:12,o:13},14:5(b,c){4.15(c);4.p=16.17(b)||18;4.p.x({\'y\':4.q.k(4),\'z\':4.l.k(4)});4.m=4.p.19(\'1a 1b\');4.7=0;4.8=[];4.m.1c().A(\'M\',\'1d\');g d=4;4.m.1e(5(a,i){a.A(\'M\',\'1f\');4.8[i]=h 1g.1h(a,{o:4.j.o,1i:5(){d.r=K},1j:5(){d.r=1k}}).B(\'9\',1);n(!i)6;a.A(\'9\',0)},4);n(4.j.w)4.N();4.s=\'q\';1l.C(\'1m\',4.l.k(4));6 4},N:5(){g a=h D(\'E\',{\'F\':\'w\'}).G(4.p,\'1n\');4.H=h D(\'E\',{\'F\':\'e-I\'}).G(a).B(\'O\',\'<t>&1o;-</t>\');4.J=h D(\'E\',{\'F\':\'e-f\'}).G(a).B(\'O\',\'<t>-&1p;</t>\');4.H.C(\'P\',4.Q.k(4));4.J.C(\'P\',4.f.k(4));4.H.x({\'y\':5(){4.R(\'e-I-u\')},\'z\':5(){4.S(\'e-I-u\')}});4.J.x({\'y\':5(){4.R(\'e-f-u\')},\'z\':5(){4.S(\'e-f-u\')}});6 4},Q:5(){n(4.r)6 4;g a=(!4.7)?4.m.T-1:4.7-1;4.8[4.7].v(\'9\',0);4.8[a].v(\'9\',1);4.7=a;6 4},f:5(){n(4.r)6 4;g a=(4.7==4.m.T-1)?0:4.7+1;4.8[4.7].v(\'9\',0);4.8[a].v(\'9\',1);4.7=a;6 4},l:5(){n(4.s==\'l\')6 4;4.s=\'l\';4.U=4.f.1q(4.j.L+4.j.o,4);6 4},q:5(){4.s=\'q\';$1r(4.U);6 4}});',62,90,'||||this|function|return|current|fx|opacity|||||control|next|var|new||options|bind|play|news|if|duration|element|stop|transitioning|status|span|hover|start|controls|addEvents|mouseenter|mouseleave|setStyle|set|addEvent|Element|div|class|inject|arrowPrev|prev|arrowNext|true|delay|position|addControls|html|click|previous|addClass|removeClass|length|timer|RokNewsFlash|Class|version|MooTools|Implements|Options|Events|2000|800|initialize|setOptions|document|id|null|getElements|ul|li|getParent|relative|each|absolute|Fx|Tween|onStart|onComplete|false|window|domready|top|lt|gt|periodical|clear'.split('|'),0,{}))
