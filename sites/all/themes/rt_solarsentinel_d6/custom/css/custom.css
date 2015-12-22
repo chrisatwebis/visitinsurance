@@ -114,9 +114,6 @@ body.front #breadcrumbs{
 	overflow: hidden;
 }
 
-.date-block {
-	width: 50%;
-}
 .view-id-taxonomy_term table
 {
 	width:100%;
@@ -1724,4 +1721,8 @@ Insurance Category page
 .view-id-taxonomy_term.view-display-id-page_2 .views-field-phpcode,
 .view-id-taxonomy_term.view-display-id-page_1 .views-field-phpcode{
 	padding:0 30px;
+}
+
+#top-bar .date-block{
+	width: 60%;
 }
