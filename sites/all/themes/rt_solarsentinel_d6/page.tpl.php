@@ -69,7 +69,11 @@
 						
 						<div class="date-block">
 							<div id="site-contact">
+<<<<<<< HEAD
 							<?php print t("Call us at <code>647-515-9368 (Toronto), 514-606-6767 (Montreal), 1-877-580-9719</code> (Other Regions In Canada) or <a href='@url'>Contact Us</a>", array("@url"=>url("webform/contact-us")));?>
+=======
+							<?php print t("Call us at <code>647-515-9368, 514-606-6767, 1-866-850-7890</code>(Free Toll) or <a href='@url'>Contact Us</a>", array("@url"=>url("webform/contact-us")));?>
+>>>>>>> 9b07a02125789fcfd916490bf6b63033f679b956
 							</div>
 						</div>
 
