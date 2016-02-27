@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Ignore configuration files that may contain sensitive information.
 sites/*/settings*.php
 
@@ -9,6 +10,12 @@ sites/*/private
 cache
 files
 .htaccess
+=======
+cache
+
+sites/default/settings.php
+sites/default/files
+>>>>>>> 9b07a02125789fcfd916490bf6b63033f679b956
 =======
 cache
 

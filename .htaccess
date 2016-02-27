@@ -112,6 +112,7 @@ DirectoryIndex index.php
   # RewriteBase /
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   ### BOOST START ###
 
   # NORMAL - Cached css & js files
@@ -134,6 +135,8 @@ DirectoryIndex index.php
 
   ### BOOST END ###
 
+=======
+>>>>>>> 9b07a02125789fcfd916490bf6b63033f679b956
 =======
 >>>>>>> 9b07a02125789fcfd916490bf6b63033f679b956
   # Rewrite URLs of the form 'x' to the form 'index.php?q=x'.
