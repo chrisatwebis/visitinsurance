@@ -89,11 +89,6 @@ DirectoryIndex index.php
   # adapt and uncomment the following:
   # RewriteCond %{HTTP_HOST} ^example\.com$ [NC]
   # RewriteRule ^(.*)$ http://www.example.com/$1 [L,R=301]
-
-  RewriteCond %{HTTP_HOST} .
-  RewriteCond %{HTTP_HOST} !^www\. [NC]
-  RewriteRule ^ http%{ENV:protossl}://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
   #
   # To redirect all users to access the site WITHOUT the 'www.' prefix,
   # (http://www.example.com/... will be redirected to http://example.com/...)
@@ -111,34 +106,6 @@ DirectoryIndex index.php
   # uncomment the following line:
   # RewriteBase /
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  ### BOOST START ###
-
-  # NORMAL - Cached css & js files
-  RewriteCond %{DOCUMENT_ROOT}/cache/perm/%{HTTP_HOST}%{REQUEST_URI}_\.css -s
-  RewriteRule .* cache/perm/%{HTTP_HOST}%{REQUEST_URI}_\.css [L,QSA,T=text/css]
-  RewriteCond %{DOCUMENT_ROOT}/cache/perm/%{HTTP_HOST}%{REQUEST_URI}_\.js -s
-  RewriteRule .* cache/perm/%{HTTP_HOST}%{REQUEST_URI}_\.js [L,QSA,T=text/javascript]
-
-  # Caching for anonymous users
-  # Skip boost IF not get request OR uri has wrong dir OR cookie is set OR request came from this server OR https request
-  RewriteCond %{REQUEST_METHOD} !^(GET|HEAD)$ [OR]
-  RewriteCond %{REQUEST_URI} (^/(admin|cache|misc|modules|sites|system|openid|themes|node/add|comment/reply))|(/(edit|user|user/(login|password|register))$) [OR]
-  RewriteCond %{HTTPS} on [OR]
-  RewriteCond %{HTTP_COOKIE} DRUPAL_UID
-  RewriteRule .* - [S=1]
-
-  # NORMAL
-  RewriteCond %{DOCUMENT_ROOT}/cache/normal/%{HTTP_HOST}%{REQUEST_URI}_%{QUERY_STRING}\.html -s
-  RewriteRule .* cache/normal/%{HTTP_HOST}%{REQUEST_URI}_%{QUERY_STRING}\.html [L,T=text/html]
-
-  ### BOOST END ###
-
-=======
->>>>>>> 9b07a02125789fcfd916490bf6b63033f679b956
-=======
->>>>>>> 9b07a02125789fcfd916490bf6b63033f679b956
   # Rewrite URLs of the form 'x' to the form 'index.php?q=x'.
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
@@ -147,4 +114,3 @@ DirectoryIndex index.php
 </IfModule>
 
 # $Id$
-
