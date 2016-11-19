@@ -8,3 +8,5 @@ sites/*/private
 cache
 files
 .htaccess
+
+error_log
