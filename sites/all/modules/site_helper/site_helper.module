@@ -366,7 +366,7 @@
 				}else{
 					if(!empty($form["submitted"]["insurance_product"]["#default_value"]))
 					{
-						site_helper_webform_coverage_and_deductible_js_preparing_output($form, $form_state);
+						site_helper_webform_coverage_and_deductible_js_preparing_output($form,$form_state);
 					}
 				}
 				if(isset($start) && !empty($form["submitted"]["travel_dates"]["effective_date"]) && !empty($form["submitted"]["travel_dates"]["canada_arrival_date"]))
@@ -801,7 +801,7 @@
 		
 		
 		$coverage_and_deductible_forms = &$form["submitted"]["insurable_members"]["coverage_and_deductible"];
-		site_helper_webform_coverage_and_deductible_js_preparing_output($form, $form_state);
+		site_helper_webform_coverage_and_deductible_js_preparing_output($form,$form_state);
 		
 		$output = theme('status_messages') .  drupal_render($coverage_and_deductible_forms);
 		//$output = drupal_render($coverage_and_deductible_forms);
@@ -1177,7 +1177,7 @@
 	}
 	
 	//preparing the $form and $form_state for the ajax output
-	function site_helper_webform_coverage_and_deductible_js_preparing_output(&$form, &$form_state)
+	function site_helper_webform_coverage_and_deductible_js_preparing_output(&$form,&$form_state)
 	{
 		// Render the new output.
 		if(!empty($form["submitted"]["insurable_members"]["coverage_and_deductible"]) && !empty($form["submitted"]["insurable_members"]["coverage_and_deductible"]["about_this_insurance"]["insurance_info"]))

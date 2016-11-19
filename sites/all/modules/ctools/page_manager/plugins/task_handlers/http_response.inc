@@ -270,18 +270,14 @@ function page_manager_http_response_render($handler, $base_contexts, $args, $tes
     $url = parse_url($path);
     if (isset($url['query'])) {
       $path = strtr($path, array('?' . $url['query'] => ''));
-      $info['query'] = array();
-      foreach (explode('&', $url['query']) as $query_part) {
-        list($key, $value) = explode('=', $query_part); 
-        $info['query'][$key] = $value; 
-      }
+      $info['query'] = $url['query'];
     }
     if (isset($url['fragment'])) {
       $path = strtr($path, array('#' . $url['fragment'] => ''));
       $info['fragment'] = $url['fragment'];
     }
 
-    $info['destination'] = rtrim($path, '?');
+    $info['destination'] = $path;
   }
 
   return $info;

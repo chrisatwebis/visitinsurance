@@ -121,7 +121,12 @@ function theme_filefield_file($file) {
     return l($file['filename'], $path);
   }
   else {
-    $url = file_create_url(field_file_urlencode_path($path));
+    // We need to manually URL encode links to files if using the public
+    // downloads method. file_create_url() encodes private downloads.
+    if (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) == FILE_DOWNLOADS_PUBLIC) {
+      $path = drupal_urlencode(str_replace('\\', '/', $path));
+    }
+    $url = file_create_url($path);
   }
   $icon = theme('filefield_icon', $file);
 

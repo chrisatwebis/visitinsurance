@@ -2,6 +2,8 @@
 
 /**
  * Field handler to provide simple renderer that allows linking to a node.
+ *
+ * @ingroup views_field_handlers
  */
 class views_handler_field_search_score extends views_handler_field_numeric {
   function option_definition() {
@@ -62,12 +64,6 @@ class views_handler_field_search_score extends views_handler_field_numeric {
         $this->view->style_plugin->options['default'] = $this->options['alternate_sort'];
         $this->view->style_plugin->options['order'] = $this->options['alternate_order'];
       }
-    }
-  }
-
-  function click_sort($order) {
-    if (isset($this->table_alias)) {
-       $this->query->add_orderby(NULL, NULL, $order, $this->field_alias);
     }
   }
 

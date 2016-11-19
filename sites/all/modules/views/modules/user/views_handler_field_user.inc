@@ -2,12 +2,14 @@
 
 /**
  * Field handler to provide simple renderer that allows linking to a user.
+ *
+ * @ingroup views_field_handlers
  */
 class views_handler_field_user extends views_handler_field {
   /**
    * Override init function to provide generic option to link to user.
    */
-  function init(&$view, $data) {
+  function init(&$view, &$data) {
     parent::init($view, $data);
     if (!empty($this->options['link_to_user'])) {
       $this->additional_fields['uid'] = 'uid';
@@ -34,14 +36,15 @@ class views_handler_field_user extends views_handler_field {
   }
 
   function render_link($data, $values) {
-    if (!empty($this->options['link_to_user']) && user_access('access user profiles') && $values->{$this->aliases['uid']} && $data !== NULL && $data !== '') {
+    if (!empty($this->options['link_to_user']) && user_access('access user profiles') && ($uid = $this->get_value($values, 'uid')) && $data !== NULL && $data !== '') {
       $this->options['alter']['make_link'] = TRUE;
-      $this->options['alter']['path'] = "user/" . $values->{$this->aliases['uid']};
+      $this->options['alter']['path'] = "user/" . $uid;
     }
     return $data;
   }
 
   function render($values) {
-    return $this->render_link(check_plain($values->{$this->field_alias}), $values);
+    $value = $this->get_value($values);
+    return $this->render_link($this->sanitize_value($value), $values);
   }
 }

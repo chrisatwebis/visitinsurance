@@ -1,12 +1,14 @@
 <?php
 
 /**
- * @file ajax.inc
- *
+ * @file
  * Handles the server side AJAX interactions of Views.
- *
- * @defgroup ajax Views ajax library
+ */
+
+/**
+ * @defgroup ajax Views AJAX library
  * @{
+ * Handles the server side AJAX interactions of Views.
  */
 
 /**
@@ -18,8 +20,17 @@ function views_ajax() {
     $display_id = $_REQUEST['view_display_id'];
     $args = isset($_REQUEST['view_args']) && $_REQUEST['view_args'] !== '' ? explode('/', $_REQUEST['view_args']) : array();
     $path = isset($_REQUEST['view_path']) ? $_REQUEST['view_path'] : NULL;
-    $dom_id = isset($_REQUEST['view_dom_id']) ? intval($_REQUEST['view_dom_id']) : NULL;
+    $dom_id = isset($_REQUEST['view_dom_id']) ? preg_replace('/[^a-zA-Z0-9_-]+/', '-', $_REQUEST['view_dom_id']) : NULL;
     $pager_element = isset($_REQUEST['pager_element']) ? intval($_REQUEST['pager_element']) : NULL;
+
+    $ajax_arguments = array(
+      'view_name' => $name,
+      'view_display_id' => $display_id,
+      'view_args' => $_REQUEST['view_args'],
+      'view_path' => $path,
+      'view_dom_id' => $dom_id,
+      'pager_element' => $pager_element,
+    );
     views_include('ajax');
     $object = new stdClass();
 
@@ -35,6 +46,7 @@ function views_ajax() {
     }
     // Load the view.
     if ($view = views_get_view($name)) {
+      $view->ajax_path = array($_GET['q'], $ajax_arguments);
       if ($view->access($display_id)) {
 
         // Fix 'q' for paging.

@@ -56,7 +56,7 @@ class views_plugin_style_jump_menu extends views_plugin_style {
 
     $form['hide'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Hide the "Go" button.'),
+      '#title' => t('Hide the "Go" button'),
       '#default_value' => !empty($this->options['hide']),
       '#description' => t('If hidden, this button will only be hidden for users with javascript and the page will automatically jump when the select is changed.'),
     );
@@ -76,7 +76,7 @@ class views_plugin_style_jump_menu extends views_plugin_style {
 
     $form['default_value'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Select the current argument.'),
+      '#title' => t('Select the current argument'),
       '#default_value' => !empty($this->options['default_value']),
       '#description' => t('If checked, the current path will be displayed as the default option in the jump menu, if applicable.'),
     );
@@ -120,21 +120,31 @@ class views_plugin_style_jump_menu extends views_plugin_style {
 
         $path = url($path, $url_options);
         $field = html_entity_decode(strip_tags($this->row_plugin->render($row)), ENT_QUOTES);
+        $key = md5($path . $field) . "::" . $path;
         if ($title) {
-          $options[$title][$path] = $field;
+          $options[$title][$key] = $field;
         }
         else {
-          $options[$path] = $field;
+          $options[$key] = $field;
         }
-        $paths[$path] = $path;
+        $paths[$path] = $key;
         $this->view->row_index++;
       }
     }
     unset($this->view->row_index);
 
     $default_value = '';
-    if ($this->options['default_value'] && !empty($paths[url($_GET['q'])])) {
-      $default_value = url($_GET['q']);
+    if ($this->options['default_value']) {
+      $lookup_options = array();
+      // We need to check if the path is absolute
+      // or else language is not taken in account.
+      if ($this->view->display[$this->view->current_display]->display_options['fields'][$this->options['path']]['absolute']) {
+        $lookup_options['absolute'] = TRUE;
+      }
+      $lookup_url = url($_GET['q'], $lookup_options);
+      if (!empty($paths[$lookup_url])) {
+        $default_value = $paths[$lookup_url];
+      }
     }
 
     ctools_include('jump-menu');

@@ -852,8 +852,7 @@ class ctools_export_ui {
 
     // Figure out if this is a new instance of the wizard
     if (empty($form_state['step'])) {
-      $keys = array_keys($form_info['order']);
-      $form_state['step'] = reset($keys);
+      $form_state['step'] = reset(array_keys($form_info['order']));
     }
 
     if (empty($form_info['order'][$form_state['step']]) && empty($form_info['forms'][$form_state['step']])) {
@@ -1377,7 +1376,7 @@ function ctools_export_ui_delete_confirm_form(&$form_state) {
 
   $export_key = $plugin['export']['key'];
   $question = str_replace('%title', check_plain($item->{$export_key}), $plugin['strings']['confirmation'][$form_state['op']]['question']);
-  $path = (!empty($_REQUEST['cancel_path']) && !menu_path_is_external($_REQUEST['cancel_path'])) ? $_REQUEST['cancel_path'] : ctools_export_ui_plugin_base_path($plugin);
+  $path = empty($_REQUEST['cancel_path']) ? ctools_export_ui_plugin_base_path($plugin) : $_REQUEST['cancel_path'];
 
   $form = confirm_form($form,
     $question,

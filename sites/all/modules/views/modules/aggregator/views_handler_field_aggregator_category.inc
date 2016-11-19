@@ -3,6 +3,8 @@
 /**
  * Field handler to provide simple renderer that allows linking to aggregator
  * category.
+ *
+ * @ingroup views_field_handlers
  */
 class views_handler_field_aggregator_category extends views_handler_field {
   /**
@@ -38,8 +40,8 @@ class views_handler_field_aggregator_category extends views_handler_field {
    * Data should be made XSS safe prior to calling this function.
    */
   function render_link($data, $values) {
-    if (!empty($this->options['link_to_category']) && !empty($values->{$this->aliases['cid']}) && $data !== NULL && $data !== '') {
-      $cid = $values->{$this->aliases['cid']};
+    $cid = $this->get_value($values, 'cid');
+    if (!empty($this->options['link_to_category']) && !empty($cid) && $data !== NULL && $data !== '') {
       $this->options['alter']['make_link'] = TRUE;
       $this->options['alter']['path'] = "aggregator/category/$cid";
     }
@@ -47,6 +49,7 @@ class views_handler_field_aggregator_category extends views_handler_field {
   }
 
   function render($values) {
-    return $this->render_link(check_plain($values->{$this->field_alias}), $values);
+    $value = $this->get_value($values);
+    return $this->render_link($this->sanitize_value($value), $values);
   }
 }

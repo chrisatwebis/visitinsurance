@@ -559,9 +559,7 @@ function _ctools_export_get_defaults($table, $export) {
         if (function_exists($function)) {
           foreach ((array) $function($export) as $name => $object) {
             // Record the module that provides this exportable.
-            if(is_object($object)) {
-              $object->export_module = $module;
-            }
+            $object->export_module = $module;
 
             if (empty($export['api'])) {
               $cache[$table][$name] = $object;
