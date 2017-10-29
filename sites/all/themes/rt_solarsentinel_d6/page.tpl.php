@@ -52,8 +52,8 @@
 		?>
 		
 		<script type="text/javascript">var switchTo5x=true;</script>
-		<script type="text/javascript" src="https://w.sharethis.com/button/buttons.js"></script>
-		<script type="text/javascript" src="https://s.sharethis.com/loader.js"></script>
+		<script type="text/javascript" src="https://ws.sharethis.com/button/buttons.js"></script>
+		<script type="text/javascript" src="https://ss.sharethis.com/loader.js"></script>
 		
 	</head>
 	<body id="<?php print 'ff-' . theme_get_setting('font_family');?>" class="<?php print $body_classes; ?>" >	
