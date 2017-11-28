@@ -407,13 +407,11 @@
 				<?php if (theme_get_setting(show_copyright) == 1) : ?>
 				<div class="copyright-block">
 					<div id="copyright">
-						<a href="http://www.webis.ca" target="_blank">Undeniable Design Strength Website from <b>Webis.ca</b></a>
+						<a href="http://www.webis.ca?utm_source=visitinsurance&utm_medium=website&utm_campaign=poweredby" target="_blank">Undeniable Design Strength Website from <b>Webis.ca</b></a>
 						<div>
-							<span id="siteseal"><script type="text/javascript" src="https://seal.godaddy.com/getSeal?sealID=CnUEjDI0UPX08Xj8ZasNhU2bpjzYj6VsIhApl5aCPWXT1ZttiGPJZfAN7o"></script></span>
-						</div>
-						
+							<span id="siteseal"><script async type="text/javascript" src="https://seal.godaddy.com/getSeal?sealID=KNPOSxLamRryCFgCcnGqSDz5WNwgi0Ve9CgldAZAE2XcTROHMHoupiVWNeRc"></script></span>
+						</div>						
 					</div>
-					<!--a href="http://www.webis.ca/" title="" id="rocket"></a-->
 				</div>
 				<?php else: ?>
 				<div class="footer-mod">
