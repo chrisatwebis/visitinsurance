@@ -408,9 +408,9 @@
 				<div class="copyright-block">
 					<div id="copyright">
 						<a href="http://www.webis.ca?utm_source=visitinsurance&utm_medium=website&utm_campaign=poweredby" target="_blank">Undeniable Design Strength Website from <b>Webis.ca</b></a>
-						<div>
+						<p>
 							<span id="siteseal"><script async type="text/javascript" src="https://seal.godaddy.com/getSeal?sealID=KNPOSxLamRryCFgCcnGqSDz5WNwgi0Ve9CgldAZAE2XcTROHMHoupiVWNeRc"></script></span>
-						</div>						
+						</p>						
 					</div>
 				</div>
 				<?php else: ?>
